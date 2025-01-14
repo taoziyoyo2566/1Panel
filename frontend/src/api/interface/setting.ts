@@ -146,8 +146,8 @@ export namespace Setting {
     export interface SnapshotInfo {
         id: number;
         name: string;
-        from: string;
-        defaultDownload: string;
+        sourceAccounts: Array<string>;
+        downloadAccount: string;
         description: string;
         status: string;
         message: string;
@@ -164,13 +164,6 @@ export namespace Setting {
         recoverMessage: string;
         rollbackStatus: string;
         rollbackMessage: string;
-    }
-    export interface SnapshotFile {
-        id: number;
-        name: string;
-        from: string;
-        defaultDownload: string;
-        size: number;
     }
     export interface SnapshotData {
         appData: Array<DataTree>;

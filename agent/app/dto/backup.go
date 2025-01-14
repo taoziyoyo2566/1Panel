@@ -4,6 +4,42 @@ import (
 	"time"
 )
 
+type BackupOperate struct {
+	ID         uint   `json:"id"`
+	Name       string `json:"name"`
+	Type       string `json:"type" validate:"required"`
+	IsPublic   bool   `json:"isPublic"`
+	Bucket     string `json:"bucket"`
+	AccessKey  string `json:"accessKey"`
+	Credential string `json:"credential"`
+	BackupPath string `json:"backupPath"`
+	Vars       string `json:"vars" validate:"required"`
+
+	RememberAuth bool `json:"rememberAuth"`
+}
+
+type BackupInfo struct {
+	ID         uint      `json:"id"`
+	Name       string    `json:"name"`
+	Type       string    `json:"type"`
+	IsPublic   bool      `json:"isPublic"`
+	Bucket     string    `json:"bucket"`
+	AccessKey  string    `json:"accessKey"`
+	Credential string    `json:"credential"`
+	BackupPath string    `json:"backupPath"`
+	Vars       string    `json:"vars"`
+	CreatedAt  time.Time `json:"createdAt"`
+
+	RememberAuth bool `json:"rememberAuth"`
+}
+
+type ForBuckets struct {
+	Type       string `json:"type" validate:"required"`
+	AccessKey  string `json:"accessKey"`
+	Credential string `json:"credential" validate:"required"`
+	Vars       string `json:"vars" validate:"required"`
+}
+
 type SyncFromMaster struct {
 	Name      string `json:"name" validate:"required"`
 	Operation string `json:"operation" validate:"required,oneof=create delete update"`
@@ -11,9 +47,10 @@ type SyncFromMaster struct {
 }
 
 type BackupOption struct {
-	ID   uint   `json:"id"`
-	Name string `json:"name"`
-	Type string `json:"type"`
+	ID       uint   `json:"id"`
+	Name     string `json:"name"`
+	Type     string `json:"type"`
+	IsPublic bool   `json:"isPublic"`
 }
 
 type CommonBackup struct {
@@ -55,11 +92,24 @@ type BackupRecords struct {
 	DownloadAccountID uint      `json:"downloadAccountID"`
 	FileDir           string    `json:"fileDir"`
 	FileName          string    `json:"fileName"`
-	Size              int64     `json:"size"`
 }
 
 type DownloadRecord struct {
 	DownloadAccountID uint   `json:"downloadAccountID" validate:"required"`
 	FileDir           string `json:"fileDir" validate:"required"`
 	FileName          string `json:"fileName" validate:"required"`
+}
+
+type SearchForSize struct {
+	PageInfo
+	Type       string `json:"type" validate:"required"`
+	Name       string `json:"name"`
+	DetailName string `json:"detailName"`
+	Info       string `json:"info"`
+	CronjobID  uint   `json:"cronjobID"`
+}
+type RecordFileSize struct {
+	ID   uint   `json:"id"`
+	Name string `json:"name"`
+	Size int64  `json:"size"`
 }

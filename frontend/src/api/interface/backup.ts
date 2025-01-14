@@ -14,6 +14,7 @@ export namespace Backup {
         id: number;
         name: string;
         type: string;
+        isPublic: boolean;
         accessKey: string;
         bucket: string;
         credential: string;
@@ -32,6 +33,8 @@ export namespace Backup {
     export interface BackupOperate {
         id: number;
         type: string;
+        name: string;
+        isPublic: boolean;
         accessKey: string;
         bucket: string;
         credential: string;
@@ -55,6 +58,7 @@ export namespace Backup {
     }
     export interface ForBucket {
         type: string;
+        isPublic: boolean;
         accessKey: string;
         credential: string;
         vars: string;
@@ -63,6 +67,17 @@ export namespace Backup {
         type: string;
         name: string;
         detailName: string;
+    }
+    export interface SearchForSize extends ReqPage {
+        type: string;
+        name: string;
+        detailName: string;
+        info: string;
+        cronjobID: number;
+    }
+    export interface RecordFileSize extends ReqPage {
+        id: number;
+        size: number;
     }
     export interface SearchBackupRecordByCronjob extends ReqPage {
         cronjobID: number;
