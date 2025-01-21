@@ -99,15 +99,15 @@
                     <LayoutContent :title="'Redis ' + $t('menu.database')" :divider="true">
                         <template #main>
                             <div class="app-warn">
-                                <div>
+                                <div class="flex flex-col gap-2 items-center justify-center w-full sm:flex-row">
                                     <span>{{ $t('app.checkInstalledWarn', ['Redis']) }}</span>
-                                    <span @click="goRouter('app')">
-                                        <el-icon class="ml-2"><Position /></el-icon>
+                                    <span @click="goRouter('app')" class="flex items-center justify-center gap-0.5">
+                                        <el-icon><Position /></el-icon>
                                         {{ $t('database.goInstall') }}
                                     </span>
-                                    <div>
-                                        <img src="@/assets/images/no_app.svg" />
-                                    </div>
+                                </div>
+                                <div>
+                                    <img src="@/assets/images/no_app.svg" />
                                 </div>
                             </div>
                         </template>
@@ -120,11 +120,12 @@
         <Conn ref="connRef" @check-exist="reOpenTerminal" @close-terminal="closeTerminal(true)" />
 
         <DialogPro v-model="open" :title="$t('app.checkTitle')" size="small">
-            <el-alert :closable="false" :title="$t('app.checkInstalledWarn', ['Redis-Commander'])" type="info">
+            <div class="flex justify-center items-center gap-2 flex-wrap">
+                {{ $t('app.checkInstalledWarn', ['Redis-Commander']) }}
                 <el-link icon="Position" @click="getAppDetail('redis-commander')" type="primary">
                     {{ $t('database.goInstall') }}
                 </el-link>
-            </el-alert>
+            </div>
             <template #footer>
                 <span class="dialog-footer">
                     <el-button @click="open = false">{{ $t('commons.button.cancel') }}</el-button>

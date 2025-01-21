@@ -33,7 +33,7 @@
                     {{ $t('license.power') }}
                 </el-button>
                 <div class="mt-3 mb-5">
-                    <el-button text type="primary" @click="toHalo">{{ $t('license.knowMorePro') }}</el-button>
+                    <el-button text type="primary" @click="toLxware">{{ $t('license.knowMorePro') }}</el-button>
                 </div>
             </div>
         </DialogPro>
@@ -48,7 +48,7 @@ import { UploadFileData } from '@/api/modules/setting';
 import { GlobalStore } from '@/store';
 import { UploadFile, UploadFiles, UploadInstance, UploadProps, UploadRawFile, genFileId } from 'element-plus';
 import { useTheme } from '@/global/use-theme';
-import { getXpackSetting } from '@/utils/xpack';
+import { getXpackSetting, initFavicon } from '@/utils/xpack';
 const globalStore = GlobalStore();
 
 const { switchTheme } = useTheme();
@@ -73,8 +73,12 @@ const handleExceed: UploadProps['onExceed'] = (files) => {
     uploadRef.value!.handleStart(file);
 };
 
-const toHalo = () => {
-    window.open('https://www.lxware.cn/1panel' + '', '_blank', 'noopener,noreferrer');
+const toLxware = () => {
+    if (!globalStore.isIntl) {
+        window.open('https://www.lxware.cn/1panel' + '', '_blank', 'noopener,noreferrer');
+    } else {
+        window.open('https://1panel.hk/pricing' + '', '_blank', 'noopener,noreferrer');
+    }
 };
 
 const submit = async () => {
@@ -90,10 +94,12 @@ const submit = async () => {
             globalStore.isProductPro = true;
             const xpackRes = await getXpackSetting();
             if (xpackRes) {
-                globalStore.themeConfig.isGold = xpackRes.data.theme === 'dark-gold';
+                globalStore.themeConfig.theme = xpackRes.data.theme;
+                globalStore.themeConfig.themeColor = xpackRes.data.themeColor;
             }
             loading.value = false;
             switchTheme();
+            initFavicon();
             uploadRef.value!.clearFiles();
             uploaderFiles.value = [];
             open.value = false;

@@ -2,6 +2,7 @@ package v2
 
 import (
 	"encoding/base64"
+
 	"github.com/1Panel-dev/1Panel/core/app/api/v2/helper"
 	"github.com/1Panel-dev/1Panel/core/app/dto"
 	"github.com/1Panel-dev/1Panel/core/app/model"
@@ -78,13 +79,14 @@ func (b *BaseApi) MFALogin(c *gin.Context) {
 // @Summary User logout
 // @Success 200
 // @Security ApiKeyAuth
+// @Security Timestamp
 // @Router /core/auth/logout [post]
 func (b *BaseApi) LogOut(c *gin.Context) {
 	if err := authService.LogOut(c); err != nil {
 		helper.InternalServer(c, err)
 		return
 	}
-	helper.SuccessWithData(c, nil)
+	helper.SuccessWithOutData(c)
 }
 
 // @Tags Auth
@@ -111,7 +113,7 @@ func (b *BaseApi) GetResponsePage(c *gin.Context) {
 
 // @Tags Auth
 // @Summary Check System isDemo
-// @Success 200
+// @Success 200 {boolean} demo
 // @Router /core/auth/demo [get]
 func (b *BaseApi) CheckIsDemo(c *gin.Context) {
 	helper.SuccessWithData(c, global.CONF.System.IsDemo)
@@ -119,7 +121,7 @@ func (b *BaseApi) CheckIsDemo(c *gin.Context) {
 
 // @Tags Auth
 // @Summary Load System Language
-// @Success 200
+// @Success 200 {string} language
 // @Router /core/auth/language [get]
 func (b *BaseApi) GetLanguage(c *gin.Context) {
 	settingInfo, err := settingService.GetSettingInfo()
@@ -150,4 +152,12 @@ func saveLoginLogs(c *gin.Context, err error) {
 	logs.Agent = c.GetHeader("User-Agent")
 	//logs.Address = address
 	_ = logService.CreateLoginLog(logs)
+}
+
+// @Tags Auth
+// @Summary Check System IsIntl
+// @Success 200 {string} intl
+// @Router /auth/intl [get]
+func (b *BaseApi) CheckIsIntl(c *gin.Context) {
+	helper.SuccessWithData(c, global.CONF.System.IsIntl)
 }

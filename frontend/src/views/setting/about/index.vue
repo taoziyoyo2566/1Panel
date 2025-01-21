@@ -4,7 +4,11 @@
             <template #main>
                 <div style="text-align: center; margin-top: 20px">
                     <div style="justify-self: center" class="logo">
-                        <img v-if="globalStore.themeConfig.logo" style="width: 80px" :src="'/api/v2/images/logo'" />
+                        <img
+                            v-if="globalStore.themeConfig.logo"
+                            style="width: 80px"
+                            :src="`/api/v2/images/logo?t=${Date.now()}`"
+                        />
                         <PrimaryLogo v-else />
                     </div>
                     <h3 class="description">{{ globalStore.themeConfig.title || $t('setting.description') }}</h3>
@@ -41,7 +45,9 @@ import { onMounted, ref } from 'vue';
 import SystemUpgrade from '@/components/system-upgrade/index.vue';
 import { GlobalStore } from '@/store';
 import PrimaryLogo from '@/assets/images/1panel-logo.svg?component';
+import { storeToRefs } from 'pinia';
 const globalStore = GlobalStore();
+const { docsUrl } = storeToRefs(globalStore);
 
 const version = ref();
 const loading = ref();
@@ -51,7 +57,7 @@ const search = async () => {
 };
 
 const toDoc = () => {
-    window.open('https://1panel.cn/docs/', '_blank', 'noopener,noreferrer');
+    window.open(docsUrl.value, '_blank', 'noopener,noreferrer');
 };
 const toGithub = () => {
     window.open('https://github.com/1Panel-dev/1Panel', '_blank', 'noopener,noreferrer');

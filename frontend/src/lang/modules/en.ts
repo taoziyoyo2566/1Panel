@@ -12,6 +12,7 @@ const message = {
         false: 'false',
         example: 'e.g.:',
         fit2cloud: 'FIT2CLOUD',
+        lingxia: 'Lingxia',
         colon: ': ',
         button: {
             prev: 'Previous',
@@ -182,11 +183,11 @@ const message = {
             title: 'Linux Server Management Panel',
             licenseHelper:
                 'Agree &laquo; <a href="https://www.fit2cloud.com/legal/licenses.html" target="_blank">Community License Agreement</a> &raquo;',
-            errorAgree: 'Please click to agree to the Community Software License Agreement',
+            errorAgree: 'Click to agree to the Community Software License',
             logout: 'Logout',
             agreeTitle: 'Agreement',
             agreeContent:
-                'In order to better protect your legitimate rights and interests, please read and agree to the following agreement &laquo; <a href = "https://www.fit2cloud.com/legal/licenses.html" target = "_blank" > fly to cloud community software license agreement </a> &raquo;',
+                'In order to better protect your legitimate rights and interests, please read and agree to the following agreement &laquo; <a href = "https://www.fit2cloud.com/legal/licenses.html" target = "_blank" > Community License Agreement </a> &raquo;',
         },
         rule: {
             username: 'Please enter a username',
@@ -237,8 +238,7 @@ const message = {
             formatErr: 'Format error, please check and retry',
             phpExtension: 'Only supports , _ lowercase English and numbers',
             paramHttp: 'Must start with http:// or https://',
-            diffHelper:
-                'The left side is the old version, the right side is the new version, after editing, click Save using custom version',
+            phone: 'The format of the phone number is incorrect',
         },
         res: {
             paramError: 'The request failed, please try again later!',
@@ -318,6 +318,14 @@ const message = {
             time: 'Time',
             core: 'Core',
             millisecond: 'Millisecond',
+            secondUnit: 's',
+            minuteUnit: 'min',
+            hourUnit: 'h',
+            dayUnit: 'd',
+            weekUnit: 'w',
+            monthUnit: 'm',
+            yearUnit: 'y',
+            millisecondUnit: 'ms',
         },
         operate: {
             down: 'Stop',
@@ -989,6 +997,7 @@ const message = {
 
         requestExpirationTime: 'Upload Request Expiration Time（Hours）',
         unitHours: 'Unit: Hours',
+        alertTitle: 'Planned Task - {0} 「{1}」 Task Failure Alert',
     },
     monitor: {
         monitor: 'Monitor',
@@ -1104,7 +1113,7 @@ const message = {
             hostname: 'Hostname',
             passwd: 'System Password',
             passwdHelper: 'Input characters cannot include $ and &',
-            timeZone: 'System Time Zone',
+            timeZone: 'Time Zone',
             localTime: 'Server Time',
             timeZoneChangeHelper: 'Modifying the system time zone requires restarting the service. Continue?',
             timeZoneHelper:
@@ -1203,6 +1212,8 @@ const message = {
             clamLog: 'Scan Logs',
             freshClam: 'Update Virus Definitions',
             freshClamLog: 'Update Virus Definitions Logs',
+            alertHelper: 'Professional version supports scheduled scan and SMS alert',
+            alertTitle: 'Virus scan task 「{0}」 detected infected file alert',
         },
     },
     logs: {
@@ -1240,6 +1251,14 @@ const message = {
         task: 'Task Log',
         taskName: 'Task Name',
         taskRunning: 'Running',
+    },
+    alert: {
+        isAlert: 'Alert',
+        alertCount: 'Alert Count',
+        clamHelper: 'Trigger SMS alert when scanning infected files',
+        cronJobHelper: 'Trigger SMS alert when scheduled task execution fails',
+        licenseHelper: 'Professional version supports SMS alert',
+        alertCountHelper: 'Maximum daily alarm frequency',
     },
     file: {
         dir: 'Folder',
@@ -1317,7 +1336,7 @@ const message = {
         unsupportedType: 'Unsupported file type',
         deleteHelper:
             'Are you sure you want to delete the following files? By default, it will enter the recycle bin after deletion',
-        fileHeper: 'Note: 1. Search results do not support sorting. 2. Folders cannot be sorted by size.',
+        fileHelper: 'Note: 1. Search results do not support sorting. 2. Folders cannot be sorted by size.',
         forceDeleteHelper: 'Permanently delete the file (without entering the recycle bin, delete it directly)',
         recycleBin: 'Recycle Bin',
         sourcePath: 'Original path',
@@ -1361,6 +1380,8 @@ const message = {
         noNameFolder: 'Untitled Folder',
         noNameFile: 'Untitled File',
         minimap: 'Code Mini Map',
+        fileCanNotRead: 'File can not read',
+        panelInstallDir: '1Panel installation directory cannot be deleted',
     },
     ssh: {
         autoStart: 'Auto Start',
@@ -1433,7 +1454,7 @@ const message = {
         title: 'Panel Alias',
         panelPort: 'Panel Port',
         titleHelper:
-            'Supports non-special character starting, English, Chinese, numbers, spaces, .- and _, length 3-30',
+            'Supports a length of 3 to 30 characters, including English letters, Chinese characters, numbers, spaces, and common special characters',
         portHelper:
             'The recommended port range is 8888 to 65535. Note: If the server has a security group, permit the new port from the security group in advance',
         portChange: 'Port change',
@@ -1457,10 +1478,38 @@ const message = {
         proxyHelper1: 'Downloading and synchronizing installation packages from the app store (Professional)',
         proxyHelper2: 'System version upgrades and retrieving update information (Professional)',
         proxyHelper3: 'Verification and synchronization of system licenses',
+        proxyHelper4: 'Docker network access will be done through a proxy server (Professional)',
         proxyType: 'Proxy Type',
         proxyUrl: 'Proxy Address',
         proxyPort: 'Proxy Port',
         proxyPasswdKeep: 'Remember Password',
+        proxyDocker: 'Docker Proxy',
+        proxyDockerHelper:
+            'Synchronize proxy server configuration to Docker, support offline server image pulling and other operations',
+        apiInterface: 'API Interface',
+        apiInterfaceClose: 'Once closed, API interfaces cannot be accessed. Do you want to continue?',
+        apiInterfaceHelper: 'Provide panel support for API interface access',
+        apiInterfaceAlert1:
+            'Please do not enable it in production environments as it may increase server security risks',
+        apiInterfaceAlert2:
+            'Please do not use third-party applications to call the panel API to prevent potential security threats.',
+        apiInterfaceAlert3: 'API Docs',
+        apiInterfaceAlert4: 'Usage Docs',
+        apiKey: 'API Key',
+        apiKeyHelper: 'Interface key is used for external applications to access API interfaces',
+        ipWhiteList: 'IP Whitelist',
+        ipWhiteListEgs:
+            'When there are multiple IPs, line breaks are required for display, for example:  \n172.161.10.111  \n172.161.10.0/24 ',
+        ipWhiteListHelper: 'IPs must be in the IP whitelist list to access the panel API interface',
+        apiKeyValidityTime: 'Validity period of interface key',
+        apiKeyValidityTimeEgs: 'Validity period of interface key (in minutes)',
+        apiKeyValidityTimeHelper:
+            'The interface timestamp is valid if its difference from the current timestamp (in minutes) is within the allowed range. A value of 0 disables verification.',
+        apiKeyReset: 'Interface key reset',
+        apiKeyResetHelper: 'the associated key service will become invalid. Please add a new key to the service',
+        confDockerProxy: 'Configure Docker Proxy',
+        restartNowHelper: 'Configuring Docker proxy requires restarting the Docker service.',
+        restartNow: 'Restart immediately',
         systemIPWarning: 'The server address is not currently set. Please set it in the control panel first!',
         systemIPWarning1: 'The current server address is set to {0}, and quick redirection is not possible!',
         syncTime: 'Server Time',
@@ -1829,6 +1878,7 @@ const message = {
             'Upgrading to the professional version allows customization of panel logo, welcome message, and other information.',
         monitor:
             'Upgrade to the professional version to view the real-time status of the website, visitor trends, visitor sources, request logs and other information. ',
+        alert: 'Upgrade to the professional version to receive alarm information via SMS and view alarm logs, fully control various key events, and ensure worry-free system operation',
         node: 'Upgrading to the professional version allows you to manage multiple Linux servers with 1Panel.',
     },
     clean: {
@@ -1951,7 +2001,7 @@ const message = {
         installPrompt: 'No apps installed yet',
         updateHelper: 'Updating parameters may cause the application to fail to start, please operate with caution',
         updateWarn: 'Update parameters need to rebuild the application, Do you want to continue? ',
-        busPort: 'Service Port',
+        busPort: 'Port',
         syncStart: 'Start syncing! Please refresh the app store later',
         advanced: 'Advanced Settings',
         cpuCore: 'Number of cores',

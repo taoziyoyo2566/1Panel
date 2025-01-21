@@ -27,20 +27,44 @@
                             </el-form-item>
 
                             <el-form-item :label="$t('setting.theme')" prop="theme">
-                                <el-radio-group @change="onSave('Theme', form.theme)" v-model="form.theme">
-                                    <el-radio-button v-if="isMasterProductPro" value="dark-gold">
-                                        <span>{{ $t('setting.darkGold') }}</span>
-                                    </el-radio-button>
-                                    <el-radio-button value="light">
-                                        <span>{{ $t('setting.light') }}</span>
-                                    </el-radio-button>
-                                    <el-radio-button value="dark">
-                                        <span>{{ $t('setting.dark') }}</span>
-                                    </el-radio-button>
-                                    <el-radio-button value="auto">
-                                        <span>{{ $t('setting.auto') }}</span>
-                                    </el-radio-button>
-                                </el-radio-group>
+                                <div class="flex justify-center items-center sm:gap-6 gap-2">
+                                    <div class="sm:contents hidden">
+                                        <el-radio-group @change="onSave('Theme', form.theme)" v-model="form.theme">
+                                            <el-radio-button value="light">
+                                                <span>{{ $t('setting.light') }}</span>
+                                            </el-radio-button>
+                                            <el-radio-button value="dark">
+                                                <span>{{ $t('setting.dark') }}</span>
+                                            </el-radio-button>
+                                            <el-radio-button value="auto">
+                                                <span>{{ $t('setting.auto') }}</span>
+                                            </el-radio-button>
+                                        </el-radio-group>
+                                    </div>
+                                    <div class="sm:hidden block w-32 !h-[33.5px]">
+                                        <el-select @change="onSave('Theme', form.theme)" v-model="form.theme">
+                                            <el-option key="light" value="light" :label="$t('setting.light')">
+                                                {{ $t('setting.light') }}
+                                            </el-option>
+                                            <el-option key="dark" value="dark" :label="$t('setting.dark')">
+                                                {{ $t('setting.dark') }}
+                                            </el-option>
+                                            <el-option key="auto" value="auto" :label="$t('setting.auto')">
+                                                {{ $t('setting.auto') }}
+                                            </el-option>
+                                        </el-select>
+                                    </div>
+                                    <div>
+                                        <el-button
+                                            v-if="isMasterProductPro"
+                                            @click="onChangeThemeColor"
+                                            icon="Setting"
+                                            class="!h-[32px] sm:!h-[33.5px]"
+                                        >
+                                            <span>{{ $t('container.custom') }}</span>
+                                        </el-button>
+                                    </div>
+                                </div>
                             </el-form-item>
 
                             <el-form-item :label="$t('setting.menuTabs')" prop="menuTabs">
@@ -65,15 +89,20 @@
                             </el-form-item>
 
                             <el-form-item :label="$t('setting.language')" prop="language">
-                                <el-radio-group
-                                    style="width: 100%"
+                                <el-select
+                                    class="sm:!w-1/2 !w-full"
                                     @change="onSave('Language', form.language)"
                                     v-model="form.language"
                                 >
-                                    <el-radio value="zh">中文(简体)</el-radio>
-                                    <el-radio value="tw">中文(繁體)</el-radio>
-                                    <el-radio value="en">English</el-radio>
-                                </el-radio-group>
+                                    <el-option
+                                        v-for="option in languageOptions"
+                                        :key="option.value"
+                                        :value="option.value"
+                                        :label="option.label"
+                                    >
+                                        {{ option.label }}
+                                    </el-option>
+                                </el-select>
                             </el-form-item>
 
                             <el-form-item :label="$t('setting.sessionTimeout')" prop="sessionTimeout">
@@ -97,6 +126,23 @@
                                         </el-button>
                                     </template>
                                 </el-input>
+                            </el-form-item>
+
+                            <el-form-item :label="$t('setting.apiInterface')" prop="apiInterface">
+                                <el-switch
+                                    @change="onChangeApiInterfaceStatus"
+                                    v-model="form.apiInterfaceStatus"
+                                    active-value="Enable"
+                                    inactive-value="Disable"
+                                />
+                                <span class="input-help">{{ $t('setting.apiInterfaceHelper') }}</span>
+                                <div v-if="form.apiInterfaceStatus === 'enable'">
+                                    <div>
+                                        <el-button link type="primary" @click="onChangeApiInterfaceStatus">
+                                            {{ $t('commons.button.view') }}
+                                        </el-button>
+                                    </div>
+                                </div>
                             </el-form-item>
 
                             <el-form-item :label="$t('setting.developerMode')" prop="developerMode">
@@ -133,19 +179,23 @@
         <UserName ref="userNameRef" />
         <PanelName ref="panelNameRef" @search="search()" />
         <Proxy ref="proxyRef" @search="search()" />
+        <ApiInterface ref="apiInterfaceRef" @search="search()" />
         <Timeout ref="timeoutRef" @search="search()" />
         <HideMenu ref="hideMenuRef" @search="search()" />
+        <ThemeColor ref="themeColorRef" />
     </div>
 </template>
 
 <script lang="ts" setup>
 import { ref, reactive, onMounted, computed } from 'vue';
-import { ElForm } from 'element-plus';
-import { getSettingInfo, updateSetting, getSystemAvailable } from '@/api/modules/setting';
+import { ElForm, ElMessageBox } from 'element-plus';
+import { getSettingInfo, updateSetting, getSystemAvailable, updateApiConfig } from '@/api/modules/setting';
 import { GlobalStore } from '@/store';
 import { useI18n } from 'vue-i18n';
 import { useTheme } from '@/global/use-theme';
 import { MsgSuccess } from '@/utils/message';
+import ThemeColor from '@/views/setting/panel/theme-color/index.vue';
+import ApiInterface from '@/views/setting/panel/api-interface/index.vue';
 import Password from '@/views/setting/panel/password/index.vue';
 import UserName from '@/views/setting/panel/username/index.vue';
 import Timeout from '@/views/setting/panel/timeout/index.vue';
@@ -154,6 +204,7 @@ import Proxy from '@/views/setting/panel/proxy/index.vue';
 import HideMenu from '@/views/setting/panel/hidemenu/index.vue';
 import { storeToRefs } from 'pinia';
 import { getXpackSetting, updateXpackSettingByKey } from '@/utils/xpack';
+import { setPrimaryColor } from '@/utils/theme';
 
 const loading = ref(false);
 const i18n = useI18n();
@@ -166,12 +217,22 @@ const mobile = computed(() => {
     return globalStore.isMobile();
 });
 
+interface ThemeColor {
+    light: string;
+    dark: string;
+    themePredefineColors: {
+        light: string[];
+        dark: string[];
+    };
+}
+
 const form = reactive({
     userName: '',
     password: '',
     sessionTimeout: 0,
     panelName: '',
     theme: '',
+    themeColor: {} as ThemeColor,
     menuTabs: '',
     language: '',
     complexityVerification: '',
@@ -184,6 +245,12 @@ const form = reactive({
     proxyUser: '',
     proxyPasswd: '',
     proxyPasswdKeep: '',
+    proxyDocker: '',
+
+    apiInterfaceStatus: 'Disable',
+    apiKey: '',
+    ipWhiteList: '',
+    apiKeyValidityTime: 120,
 
     proHideMenus: ref(i18n.t('setting.unSetting')),
     hideMenuList: '',
@@ -197,6 +264,8 @@ const panelNameRef = ref();
 const proxyRef = ref();
 const timeoutRef = ref();
 const hideMenuRef = ref();
+const themeColorRef = ref();
+const apiInterfaceRef = ref();
 const unset = ref(i18n.t('setting.unSetting'));
 
 interface Node {
@@ -206,6 +275,19 @@ interface Node {
     label: string;
     isCheck: boolean;
     children?: Node[];
+}
+
+const languageOptions = ref([
+    { value: 'zh', label: '中文(简体)' },
+    { value: 'tw', label: '中文(繁體)' },
+    ...(!globalStore.isIntl ? [{ value: 'en', label: 'English' }] : []),
+    { value: 'ja', label: '日本語' },
+    { value: 'pt-BR', label: 'Português (Brasil)' },
+    { value: 'ru', label: 'Русский' },
+    { value: 'ms', label: 'Bahasa Melayu' },
+]);
+if (globalStore.isIntl) {
+    languageOptions.value.unshift({ value: 'en', label: 'English' });
 }
 
 const search = async () => {
@@ -226,6 +308,10 @@ const search = async () => {
     form.proxyUser = res.data.proxyUser;
     form.proxyPasswd = res.data.proxyPasswd;
     form.proxyPasswdKeep = res.data.proxyPasswdKeep;
+    form.apiInterfaceStatus = res.data.apiInterfaceStatus;
+    form.apiKey = res.data.apiKey;
+    form.ipWhiteList = res.data.ipWhiteList;
+    form.apiKeyValidityTime = res.data.apiKeyValidityTime;
 
     const json: Node = JSON.parse(res.data.xpackHideMenu);
     if (json.isCheck === false) {
@@ -243,11 +329,17 @@ const search = async () => {
     if (isMasterProductPro.value) {
         const xpackRes = await getXpackSetting();
         if (xpackRes) {
-            form.theme = xpackRes.data.theme === 'dark-gold' ? 'dark-gold' : res.data.theme;
-            return;
+            form.theme = xpackRes.data.theme || globalStore.themeConfig.theme || 'light';
+            form.themeColor = JSON.parse(xpackRes.data.themeColor || '{"light":"#005eeb","dark":"#F0BE96"}');
+            globalStore.themeConfig.themeColor = xpackRes.data.themeColor
+                ? xpackRes.data.themeColor
+                : '{"light":"#005eeb","dark":"#F0BE96"}';
+            globalStore.themeConfig.theme = form.theme;
+            form.proxyDocker = xpackRes.data.proxyDocker;
         }
+    } else {
+        form.theme = globalStore.themeConfig.theme || res.data.theme || 'light';
     }
-    form.theme = res.data.theme;
 };
 
 function extractTitles(node: Node, result: string[]): void {
@@ -294,6 +386,7 @@ const onChangeProxy = () => {
         user: form.proxyUser,
         passwd: form.proxyPasswd,
         passwdKeep: form.proxyPasswdKeep,
+        proxyDocker: form.proxyDocker,
     });
 };
 
@@ -301,43 +394,85 @@ const onChangeHideMenus = () => {
     hideMenuRef.value.acceptParams({ menuList: form.hideMenuList });
 };
 
+const onChangeThemeColor = () => {
+    const themeColor: ThemeColor = JSON.parse(globalStore.themeConfig.themeColor);
+    themeColorRef.value.acceptParams({ themeColor: themeColor, theme: globalStore.themeConfig.theme });
+};
+
+const onChangeApiInterfaceStatus = async () => {
+    if (form.apiInterfaceStatus === 'Enable') {
+        apiInterfaceRef.value.acceptParams({
+            apiInterfaceStatus: form.apiInterfaceStatus,
+            apiKey: form.apiKey,
+            ipWhiteList: form.ipWhiteList,
+            apiKeyValidityTime: form.apiKeyValidityTime,
+        });
+        return;
+    }
+    ElMessageBox.confirm(i18n.t('setting.apiInterfaceClose'), i18n.t('setting.apiInterface'), {
+        confirmButtonText: i18n.t('commons.button.confirm'),
+        cancelButtonText: i18n.t('commons.button.cancel'),
+    })
+        .then(async () => {
+            loading.value = true;
+            form.apiInterfaceStatus = 'Disable';
+            let param = {
+                apiKey: form.apiKey,
+                ipWhiteList: form.ipWhiteList,
+                apiInterfaceStatus: form.apiInterfaceStatus,
+                apiKeyValidityTime: form.apiKeyValidityTime,
+            };
+            await updateApiConfig(param)
+                .then(() => {
+                    loading.value = false;
+                    search();
+                    MsgSuccess(i18n.t('commons.msg.operationSuccess'));
+                })
+                .catch(() => {
+                    loading.value = false;
+                });
+        })
+        .catch(() => {
+            form.apiInterfaceStatus = 'Enable';
+        });
+};
+
+const handleThemeChange = async (val: string) => {
+    globalStore.themeConfig.theme = val;
+    switchTheme();
+    if (globalStore.isProductPro) {
+        await updateXpackSettingByKey('Theme', val);
+        let color: string;
+        const themeColor: ThemeColor = JSON.parse(globalStore.themeConfig.themeColor);
+        if (val === 'auto') {
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+            color = prefersDark.matches ? themeColor.dark : themeColor.light;
+        } else {
+            color = val === 'dark' ? themeColor.dark : themeColor.light;
+        }
+        globalStore.themeConfig.primary = color;
+        setPrimaryColor(color);
+    }
+};
 const onSave = async (key: string, val: any) => {
     loading.value = true;
-    if (key === 'Language') {
-        i18n.locale.value = val;
-        globalStore.updateLanguage(val);
-    }
-    if (key === 'Theme') {
-        if (val === 'dark-gold') {
-            globalStore.themeConfig.isGold = true;
-        } else {
-            globalStore.themeConfig.isGold = false;
-            globalStore.themeConfig.theme = val;
-        }
-        switchTheme();
-        if (globalStore.isMasterProductPro) {
-            updateXpackSettingByKey('Theme', val === 'dark-gold' ? 'dark-gold' : '');
-            if (val === 'dark-gold') {
-                MsgSuccess(i18n.t('commons.msg.operationSuccess'));
-                loading.value = false;
-                search();
-                return;
-            }
-        }
-    }
-    if (key === 'MenuTabs') {
-        globalStore.setOpenMenuTabs(val === 'Enable');
-    }
     let param = {
         key: key,
         value: val + '',
     };
     await updateSetting(param)
-        .then(async () => {
-            if (param.key === 'Language') {
+        .then(() => {
+            if (key === 'Language') {
+                i18n.locale.value = val;
+                globalStore.updateLanguage(val);
                 location.reload();
             }
-            loading.value = false;
+            if (key === 'Theme') {
+                handleThemeChange(val);
+            }
+            if (key === 'MenuTabs') {
+                globalStore.setOpenMenuTabs(val === 'enable');
+            }
             MsgSuccess(i18n.t('commons.msg.operationSuccess'));
             search();
         })
@@ -351,3 +486,9 @@ onMounted(() => {
     getSystemAvailable();
 });
 </script>
+
+<style scoped lang="scss">
+:deep(.el-radio-group) {
+    min-width: max-content;
+}
+</style>

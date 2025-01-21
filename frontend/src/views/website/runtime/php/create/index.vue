@@ -128,7 +128,7 @@
                                     <el-link
                                         target="_blank"
                                         type="primary"
-                                        href="https://1panel.cn/docs/user_manual/websites/php/#php_1"
+                                        :href="globalStore.docsUrl + '/user_manual/websites/php/#php_1'"
                                     >
                                         {{ $t('php.toExtensionsList') }}
                                     </el-link>
@@ -188,6 +188,8 @@ import i18n from '@/lang';
 import { MsgSuccess } from '@/utils/message';
 import { FormInstance } from 'element-plus';
 import { reactive, ref } from 'vue';
+import { GlobalStore } from '@/store';
+const globalStore = GlobalStore();
 
 interface OperateRrops {
     id?: number;
@@ -210,6 +212,48 @@ const appReq = reactive({
     page: 1,
     pageSize: 20,
 });
+const phpSources = globalStore.isIntl
+    ? [
+          {
+              label: i18n.global.t('runtime.default'),
+              value: 'dl-cdn.alpinelinux.org',
+          },
+          {
+              label: i18n.global.t('runtime.xtom'),
+              value: 'mirrors.xtom.com',
+          },
+      ]
+    : [
+          {
+              label: i18n.global.t('runtime.ustc'),
+              value: 'mirrors.ustc.edu.cn',
+          },
+          {
+              label: i18n.global.t('runtime.netease'),
+              value: 'mirrors.163.com',
+          },
+          {
+              label: i18n.global.t('runtime.aliyun'),
+              value: 'mirrors.aliyun.com',
+          },
+          {
+              label: i18n.global.t('runtime.tsinghua'),
+              value: 'mirrors.tuna.tsinghua.edu.cn',
+          },
+          {
+              label: i18n.global.t('runtime.xtomhk'),
+              value: 'mirrors.xtom.com.hk',
+          },
+          {
+              label: i18n.global.t('runtime.xtom'),
+              value: 'mirrors.xtom.com',
+          },
+          {
+              label: i18n.global.t('runtime.default'),
+              value: 'dl-cdn.alpinelinux.org',
+          },
+      ];
+
 const initData = (type: string) => ({
     name: '',
     appDetailID: undefined,
@@ -218,7 +262,7 @@ const initData = (type: string) => ({
     type: type,
     resource: 'appstore',
     rebuild: false,
-    source: 'mirrors.ustc.edu.cn',
+    source: phpSources[0].value,
 });
 const extensions = ref();
 const formFields = ref();
