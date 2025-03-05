@@ -9,11 +9,34 @@ before:
     - chmod +x ./ci/script.sh
     - ./ci/script.sh
     - sed -i 's@ORIGINAL_VERSION=.*@ORIGINAL_VERSION=v{{ .Version }}@g' 1pctl
-    - go mod tidy
+    - cd ./core && go mod tidy
+    - cd ./agent && go mod tidy
     
 builds:
-  - main: ./cmd/server/main.go
-    binary: 1panel
+  - id: agent
+    main: ./agent/cmd/server/main.go
+    binary: 1panel-agent
+    flags:
+      - -tags=xpack
+      - -trimpath
+    ldflags:
+      - -w -s
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarm:
+      - 7
+    goarch:
+      - amd64
+      - arm64
+      - arm
+      - ppc64le
+      - s390x
+
+  - id: core
+    main: ./core/cmd/server/main.go
+    binary: 1panel-core
     flags:
       - -tags=xpack
       - -trimpath
@@ -34,11 +57,15 @@ builds:
 
 archives:
   - format: tar.gz
+    builds:
+      - core
+      - agent
     name_template: "1panel-v{{ .Version }}-{{ .Os }}-{{ .Arch }}{{- if .Arm }}v{{ .Arm }}{{ end }}"
     wrap_in_directory: true
     files:
       - 1pctl
-      - 1panel.service
+      - 1panel-core.service
+      - 1panel-agent.service
       - install.sh
       - GeoIP.mmdb
       - lang/*

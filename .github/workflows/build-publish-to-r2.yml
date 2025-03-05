@@ -42,4 +42,4 @@ jobs:
           rclone_config: ${{ secrets.RCLONE_CONFIG }}
       - name: Upload to Cloudflare R2
         run: |
-          rclone copy dist/ cloudflare_r2:package/stable/${{ github.ref_name }}/release/ --include "*.tar.gz" --include "checksums.txt" --progress
+          rclone copy dist/ cloudflare_r2:package/v2/stable/${{ github.ref_name }}/release/ --include "*.tar.gz" --include "checksums.txt" --progress
