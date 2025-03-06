@@ -22,11 +22,11 @@ if [ ! -f "1panel-agent.service" ]; then
 fi
 
 if [ ! -f "GeoIP.mmdb" ]; then 
-  wget https://resource.1panel.pro/geo/GeoIP.mmdb
+  wget https://resource.fit2cloud.com/1panel/package/v2/geo/GeoIP.mmdb
 fi
 
 if [ ! -f "lang.tar.gz" ]; then 
-  wget https://resource.1panel.pro/language/lang.tar.gz
+  wget https://resource.fit2cloud.com/1panel/package/v2/language/lang.tar.gz
   tar zxvf lang.tar.gz
   rm -rf lang.tar.gz
 fi

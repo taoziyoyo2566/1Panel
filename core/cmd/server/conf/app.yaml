@@ -9,9 +9,9 @@ base:
   version: v2.0.0
 
 remote_url:
-  repo_url: https://resource.fit2cloud.com/1panel/package
   app_repo: https://apps-assets.fit2cloud.com
-  resource_url: https://resource.fit2cloud.com/1panel/resource
+  repo_url: https://resource.fit2cloud.com/1panel/package/v2
+  resource_url: https://resource.fit2cloud.com/1panel/resource/v2
 
 log:
   level: debug

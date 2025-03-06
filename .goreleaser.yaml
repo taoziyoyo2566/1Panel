@@ -9,12 +9,11 @@ before:
     - chmod +x ./ci/script.sh
     - ./ci/script.sh
     - sed -i 's@ORIGINAL_VERSION=.*@ORIGINAL_VERSION=v{{ .Version }}@g' 1pctl
-    - cd ./core && go mod tidy
-    - cd ./agent && go mod tidy
     
 builds:
   - id: agent
-    main: ./agent/cmd/server/main.go
+    dir: agent
+    main: cmd/server/main.go
     binary: 1panel-agent
     flags:
       - -tags=xpack
@@ -35,7 +34,8 @@ builds:
       - s390x
 
   - id: core
-    main: ./core/cmd/server/main.go
+    dir: core
+    main: cmd/server/main.go
     binary: 1panel-core
     flags:
       - -tags=xpack
@@ -56,7 +56,7 @@ builds:
       - s390x
 
 archives:
-  - format: tar.gz
+  - formats: [ 'tar.gz' ]
     builds:
       - core
       - agent
