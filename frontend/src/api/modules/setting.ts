@@ -30,8 +30,8 @@ export const syncLicense = (id: number) => {
 export const bindLicense = (id: number, nodeID: number) => {
     return http.post(`/core/licenses/bind`, { nodeID: nodeID, licenseID: id }, TimeoutEnum.T_60S);
 };
-export const unbindLicense = (id: number) => {
-    return http.post(`/core/licenses/unbind`, { id: id }, TimeoutEnum.T_60S);
+export const unbindLicense = (id: number, force: boolean) => {
+    return http.post(`/core/licenses/unbind`, { id: id, force: force }, TimeoutEnum.T_60S);
 };
 export const loadLicenseOptions = () => {
     return http.get(`/core/licenses/options`);
