@@ -138,17 +138,20 @@ func (u *UpgradeService) Upgrade(req dto.Upgrade) error {
 
 		if err := files.CopyItem(false, true, path.Join(tmpDir, "1panel-core"), "/usr/local/bin"); err != nil {
 			global.LOG.Errorf("upgrade 1panel-core failed, err: %v", err)
+			_ = settingRepo.Update("SystemStatus", "Free")
 			u.handleRollback(originalDir, 1)
 			return
 		}
 		if err := files.CopyItem(false, true, path.Join(tmpDir, "1panel-agent"), "/usr/local/bin"); err != nil {
 			global.LOG.Errorf("upgrade 1panel-agent failed, err: %v", err)
+			_ = settingRepo.Update("SystemStatus", "Free")
 			u.handleRollback(originalDir, 1)
 			return
 		}
 
 		if err := files.CopyItem(false, true, path.Join(tmpDir, "1pctl"), "/usr/local/bin"); err != nil {
 			global.LOG.Errorf("upgrade 1pctl failed, err: %v", err)
+			_ = settingRepo.Update("SystemStatus", "Free")
 			u.handleRollback(originalDir, 2)
 			return
 		}
@@ -160,6 +163,7 @@ func (u *UpgradeService) Upgrade(req dto.Upgrade) error {
 
 		if err := files.CopyItem(false, true, path.Join(tmpDir, "1panel*.service"), "/etc/systemd/system"); err != nil {
 			global.LOG.Errorf("upgrade 1panel.service failed, err: %v", err)
+			_ = settingRepo.Update("SystemStatus", "Free")
 			u.handleRollback(originalDir, 3)
 			return
 		}
@@ -207,20 +211,26 @@ func (u *UpgradeService) handleRollback(originalDir string, errStep int) {
 			global.LOG.Errorf("rollback 1panel db failed, err: %v", err)
 		}
 	}
-	if err := files.CopyItem(false, true, path.Join(originalDir, "1panel*"), "/usr/local/bin"); err != nil {
-		global.LOG.Errorf("rollback 1pctl failed, err: %v", err)
+	if err := files.CopyItem(false, true, path.Join(originalDir, "1panel-core"), "/usr/local/bin"); err != nil {
+		global.LOG.Errorf("rollback 1panel-core failed, err: %v", err)
+	}
+	if err := files.CopyItem(false, true, path.Join(originalDir, "1panel-agent"), "/usr/local/bin"); err != nil {
+		global.LOG.Errorf("rollback 1panel-agent failed, err: %v", err)
 	}
 	if errStep == 1 {
 		return
 	}
 	if err := files.CopyItem(false, true, path.Join(originalDir, "1pctl"), "/usr/local/bin"); err != nil {
-		global.LOG.Errorf("rollback 1panel failed, err: %v", err)
+		global.LOG.Errorf("rollback 1pctl failed, err: %v", err)
 	}
 	if errStep == 2 {
 		return
 	}
-	if err := files.CopyItem(false, true, path.Join(originalDir, "1panel*.service"), "/etc/systemd/system"); err != nil {
-		global.LOG.Errorf("rollback 1panel failed, err: %v", err)
+	if err := files.CopyItem(false, true, path.Join(originalDir, "1panel-core.service"), "/etc/systemd/system"); err != nil {
+		global.LOG.Errorf("rollback 1panel-core.service failed, err: %v", err)
+	}
+	if err := files.CopyItem(false, true, path.Join(originalDir, "1panel-agent.service"), "/etc/systemd/system"); err != nil {
+		global.LOG.Errorf("rollback 1panel-agent.service failed, err: %v", err)
 	}
 }
 
