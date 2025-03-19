@@ -1255,6 +1255,7 @@ const message = {
             databases: 'Bancos de Dados',
             licenses: 'licenças',
             nodes: 'nós',
+            commands: 'Comandos Rápidos',
         },
         websiteLog: 'Logs do website',
         runLog: 'Logs de execução',
