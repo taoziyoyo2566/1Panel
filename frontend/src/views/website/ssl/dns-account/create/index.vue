@@ -97,6 +97,17 @@
                             <el-input v-model.trim="account.authorization['password']"></el-input>
                         </el-form-item>
                     </div>
+                    <div v-if="account.type === 'ClouDNS'">
+                        <el-form-item label="Auth ID" prop="authorization.authID">
+                            <el-input v-model.trim="account.authorization['authID']"></el-input>
+                        </el-form-item>
+                        <el-form-item label="Sub Auth ID" prop="authorization.subAuthID">
+                            <el-input v-model.trim="account.authorization['subAuthID']"></el-input>
+                        </el-form-item>
+                        <el-form-item label="Auth Password" prop="authorization.authPassword">
+                            <el-input v-model.trim="account.authorization['authPassword']"></el-input>
+                        </el-form-item>
+                    </div>
                     <el-form-item
                         label="API Key"
                         prop="authorization.apiKey"
@@ -137,7 +148,7 @@
 import { CreateDnsAccount, UpdateDnsAccount } from '@/api/modules/website';
 import { Rules } from '@/global/form-rules';
 import i18n from '@/lang';
-import { MsgSuccess } from '@/utils/message';
+import { MsgSuccess, MsgError } from '@/utils/message';
 import { FormInstance } from 'element-plus';
 import { ref } from 'vue';
 import { DNSTypes } from '@/global/mimetype';
@@ -169,6 +180,7 @@ const rules = ref<any>({
         clientID: [Rules.requiredInput],
         email: [Rules.email],
         password: [Rules.requiredInput],
+        authPassword: [Rules.requiredInput],
     },
 });
 const account = ref({
@@ -216,6 +228,12 @@ const submit = async (formEl: FormInstance | undefined) => {
     await formEl.validate((valid) => {
         if (!valid) {
             return;
+        }
+        if (account.value.type === 'ClouDNS') {
+            if (!account.value.authorization.authID && !account.value.authorization.subAuthID) {
+                MsgError('Please input Auth ID or Sub Auth ID');
+                return;
+            }
         }
         loading.value = true;
 
