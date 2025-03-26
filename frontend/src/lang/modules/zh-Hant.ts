@@ -1220,6 +1220,7 @@ const message = {
             logs: '日誌審計',
             settings: '面板設定',
             cronjobs: '計畫任務',
+            waf: 'WAF',
             databases: '資料庫',
             licenses: '許可證',
             nodes: '節點',

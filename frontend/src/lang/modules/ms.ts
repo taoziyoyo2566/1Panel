@@ -1270,6 +1270,7 @@ const message = {
             logs: 'Audit Log',
             settings: 'Tetapan Panel',
             cronjobs: 'Tugas Terjadual',
+            waf: 'WAF',
             databases: 'Pangkalan',
             licenses: 'lesen',
             nodes: 'nod',
