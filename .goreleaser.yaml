@@ -39,10 +39,10 @@ archives:
     wrap_in_directory: true
     files:
       - 1pctl
-      - 1panel.service
       - install.sh
-      - GeoIP.mmdb
+      - initscript/*
       - lang/*
+      - GeoIP.mmdb
 
 checksum:
   name_template: 'checksums.txt'
