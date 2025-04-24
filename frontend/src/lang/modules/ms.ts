@@ -3193,6 +3193,7 @@ const message = {
             syncHelper: 'Apabila data nod induk berubah, ia akan disegerakkan ke nod anak ini secara masa nyata,',
             syncBackupAccount: 'Data akaun sandaran,',
             syncProxy: 'Data proksi sistem,',
+            syncNodeInfo: 'Data asas nod,',
             nodeSyncHelper: 'Penyelarasan maklumat nod akan menyelaraskan maklumat berikut:',
             nodeSyncHelper1: '1. Maklumat akaun sandaran awam',
             nodeSyncHelper2: '2. Maklumat sambungan antara nod utama dan nod sub',
