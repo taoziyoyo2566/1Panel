@@ -2449,6 +2449,7 @@ const message = {
         cancelFavorite: 'Cancel Favorite',
         useProxy: 'Use Proxy',
         useProxyHelper: 'Use the proxy server address in the panel settings',
+        westCN: 'West Digital',
     },
     php: {
         short_open_tag: 'Short tag support',
