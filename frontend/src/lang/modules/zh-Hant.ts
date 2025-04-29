@@ -1667,7 +1667,7 @@ const message = {
         upgradeNotes: '更新內容',
         upgradeNow: '立即更新',
         source: '下載源',
-        versionNotSame: '檢測到該節點版本與主節點不一致，暫不支援切換，請檢查後重試！',
+        versionNotSame: '節點版本與主節點不一致，請在節點管理中升級後重試。',
         versionCompare: '檢測到節點 {0} 版本已是當前可升級最新版本，請檢查主節點版本後重試！',
 
         safe: '安全',

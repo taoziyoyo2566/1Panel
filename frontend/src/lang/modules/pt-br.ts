@@ -1825,7 +1825,7 @@ const message = {
         upgradeNow: 'Atualizar agora',
         source: 'Fonte para download',
         versionNotSame:
-            'A versão deste nó não corresponde ao nó principal. A troca não é suportada no momento. Por favor, verifique e tente novamente!',
+            'A versão do nó não corresponde à do nó principal. Atualize na Gestão de Nós antes de tentar novamente.',
         versionCompare:
             'Detectado que o nó {0} já está na última versão atualizável. Por favor, verifique a versão do nó principal e tente novamente!',
 

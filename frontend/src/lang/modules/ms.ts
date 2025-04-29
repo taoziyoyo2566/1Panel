@@ -1839,7 +1839,7 @@ const message = {
         upgradeNow: 'Kemas kini sekarang',
         source: 'Sumber muat turun',
         versionNotSame:
-            'Versi nod ini tidak sepadan dengan nod utama. Penukaran tidak disokong buat masa ini. Sila periksa dan cuba lagi!',
+            'Versi nod tidak sepadan dengan nod utama. Sila naik taraf di Pengurusan Nod sebelum mencuba semula.',
         versionCompare:
             'Nod {0} telah berada pada versi terkini yang boleh dinaik taraf. Sila periksa versi nod utama dan cuba lagi!',
 

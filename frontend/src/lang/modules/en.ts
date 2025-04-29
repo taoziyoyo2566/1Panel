@@ -1875,7 +1875,7 @@ const message = {
         upgradeNow: 'Upgrade now',
         source: 'Download source',
         versionNotSame:
-            'The version of this node does not match the primary node. Switching is not supported at this time. Please check and try again!',
+            'Node version mismatch with the main node. Please upgrade in Node Management before retrying.',
         versionCompare:
             'Detected that node {0} is already at the latest upgradable version. Please check the primary node version and try again!',
 
