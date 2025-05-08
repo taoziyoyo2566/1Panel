@@ -2999,6 +2999,7 @@ const message = {
             gatewayTimeout: 'Тайм-аут шлюза (504)',
             belongToIpGroup: 'Принадлежит к группе IP',
             notBelongToIpGroup: 'Не принадлежит к группе IP',
+            unknownWebsiteKey: 'Неизвестный домен',
         },
         monitor: {
             name: 'Мониторинг веб-сайта',
