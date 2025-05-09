@@ -21,14 +21,16 @@ if [ ! -f "1panel-agent.service" ]; then
   wget https://github.com/1Panel-dev/installer/raw/v2/1panel-agent.service
 fi
 
-if [ ! -f "GeoIP.mmdb" ]; then 
-  wget https://resource.fit2cloud.com/1panel/package/v2/geo/GeoIP.mmdb
+if [ ! -d "lang" ]; then 
+  mkdir -p lang && cd lang
+  for lang in en fa pt-BR ru zh; do
+    wget -q https://github.com/1Panel-dev/installer/raw/v2/lang/$lang.sh
+  done
+  cd ..
 fi
 
-if [ ! -f "lang.tar.gz" ]; then 
-  wget https://resource.fit2cloud.com/1panel/package/v2/language/lang.tar.gz
-  tar zxvf lang.tar.gz
-  rm -rf lang.tar.gz
+if [ ! -f "GeoIP.mmdb" ]; then 
+  wget https://resource.fit2cloud.com/1panel/package/v2/geo/GeoIP.mmdb
 fi
 
 chmod 755 1pctl install.sh

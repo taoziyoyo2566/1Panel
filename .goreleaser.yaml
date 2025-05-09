@@ -57,9 +57,7 @@ builds:
 
 archives:
   - formats: [ 'tar.gz' ]
-    builds:
-      - core
-      - agent
+    ids: [core, agent]
     name_template: "1panel-v{{ .Version }}-{{ .Os }}-{{ .Arch }}{{- if .Arm }}v{{ .Arm }}{{ end }}"
     wrap_in_directory: true
     files:
