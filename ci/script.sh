@@ -58,15 +58,7 @@ compress_binary() {
     fi
 
     sudo apt-get update
-    sudo apt-get install -y upx-ucl || {
-      echo "Failed to install upx via apt, trying source build"
-      git clone https://github.com/upx/upx.git
-      cd upx
-      git checkout v4.2.2
-      make
-      sudo cp src/upx /usr/local/bin/
-      cd ..
-    }
+    sudo apt-get install -y upx-ucl
   fi
 
   upx --best --lzma "$binary_path" && echo "[ok] Compressed: $binary_path" || echo "[warn] Failed to compress: $binary_path"
