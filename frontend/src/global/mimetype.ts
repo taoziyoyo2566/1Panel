@@ -380,7 +380,7 @@ export const Actions = [
     },
 ];
 
-export const Algorithms = [
+export const getAlgorithms = () => [
     {
         label: i18n.global.t('commons.table.default'),
         value: 'default',
@@ -398,7 +398,7 @@ export const Algorithms = [
     },
 ];
 
-export const StatusStrategy = [
+export const getStatusStrategy = () => [
     {
         label: i18n.global.t('website.strategyDown'),
         value: 'down',
