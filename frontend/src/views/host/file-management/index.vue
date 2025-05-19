@@ -160,7 +160,7 @@
                 </el-alert>
             </template>
             <template #leftToolBar>
-                <div ref="leftWrapper">
+                <div ref="leftWrapper" class="flex items-center gap-2 flex-wrap">
                     <el-dropdown @command="handleCreate" class="mr-2.5">
                         <el-button type="primary">
                             {{ $t('commons.button.create') }}
