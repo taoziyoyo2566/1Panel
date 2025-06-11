@@ -1171,6 +1171,9 @@ const message = {
         saveHelper: 'Are you sure you want to save the current terminal configuration?',
     },
     toolbox: {
+        common: {
+            toolboxHelper: 'For some installation and usage issues, please refer to',
+        },
         swap: {
             swap: 'Swap Partition',
             swapHelper1:
@@ -2793,8 +2796,8 @@ const message = {
     tool: {
         supervisor: {
             loadStatusErr: 'Failed to retrieve process status, please check the status of the supervisor service.',
-            notSupport: `Supervisor isn't detected. Refer to the official document to install.`,
-            list: 'Daemon process | Daemon processes',
+            notSupport: 'Supervisor service not detected, please go to the script library page to install it manually',
+            list: 'Daemon process',
             config: 'Supervisor configuration',
             primaryConfig: 'Main configuration file location',
             notSupportCrl: `The supervisorctl isn't detected. Refer to the official document to install.`,
@@ -2808,7 +2811,7 @@ const message = {
             uptime: 'Running time',
             notStartWarn: `Supervisor isn't started. Start it first.`,
             serviceName: 'Service name',
-            initHelper: `Supervisor service isn't initialized. Click "Initialize" to initialize.`,
+            initHelper: 'Supervisor service detected but not initialized, please refer to the configuration guide',
             serviceNameHelper: 'Supervisor service name managed by systemctl, usually supervisor or supervisord',
             restartHelper:
                 'This will restart the service after initialization, which causes all the existing daemon processes to stop.',
