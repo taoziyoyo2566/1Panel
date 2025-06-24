@@ -14,6 +14,7 @@ if [ ! -f "install.sh" ]; then
 fi
 
 if [ ! -d "initscript" ]; then
+  wget https://github.com/1Panel-dev/installer/raw/main/initscript/1panel.service
   mkdir -p initscript && cd initscript
   for file in 1panel.service 1paneld.init 1paneld.openrc 1paneld.procd; do
     wget -q https://github.com/1Panel-dev/installer/raw/main/initscript/$file

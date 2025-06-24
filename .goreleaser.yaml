@@ -40,6 +40,7 @@ archives:
     files:
       - 1pctl
       - install.sh
+      - 1panel.service
       - initscript/*
       - lang/*
       - GeoIP.mmdb
