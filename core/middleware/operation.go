@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"path"
@@ -65,7 +67,11 @@ func OperationLog() gin.HandlerFunc {
 				c.Request.Body = io.NopCloser(bytes.NewBuffer(body))
 			}
 			bodyMap := make(map[string]interface{})
-			_ = json.Unmarshal(body, &bodyMap)
+			if strings.Contains(c.Request.Header.Get("Content-Type"), "multipart/form-data") {
+				bodyMap, _ = parseMultipart(body, c.Request.Header.Get("Content-Type"))
+			} else {
+				_ = json.Unmarshal(body, &bodyMap)
+			}
 			for _, key := range operationDic.BodyKeys {
 				if _, ok := bodyMap[key]; ok {
 					formatMap[key] = bodyMap[key]
@@ -246,4 +252,34 @@ func replaceStr(val string, rep ...string) string {
 		val = strings.ReplaceAll(val, item, "")
 	}
 	return val
+}
+
+func parseMultipart(formData []byte, contentType string) (map[string]interface{}, error) {
+	d, params, err := mime.ParseMediaType(contentType)
+	if err != nil || d != "multipart/form-data" {
+		return nil, http.ErrNotMultipart
+	}
+	boundary, ok := params["boundary"]
+	if !ok {
+		return nil, http.ErrMissingBoundary
+	}
+	reader := multipart.NewReader(bytes.NewReader(formData), boundary)
+	ret := make(map[string]interface{})
+
+	f, err := reader.ReadForm(32 << 20)
+	if err != nil {
+		return nil, err
+	}
+
+	for k, v := range f.Value {
+		if len(v) > 0 {
+			ret[k] = v[0]
+		}
+	}
+	for k, v := range f.File {
+		if len(v) > 0 {
+			ret[k] = v[0].Filename
+		}
+	}
+	return ret, nil
 }
