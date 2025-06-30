@@ -3382,6 +3382,8 @@ const message = {
 
             nodeCheck: 'Availability check',
             checkSSH: 'Check node SSH connection',
+            checkUserPermission: 'Check node user permissions',
+            isNotRoot: 'Detected that password-less sudo is not supported on this node and current user is non-root',
             checkLicense: 'Check node license status',
             checkService: 'Check existing service information on node',
             checkPort: 'Check node port reachability',
