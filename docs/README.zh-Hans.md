@@ -4,14 +4,14 @@
 <p align="center">
   <a href="https://trendshift.io/repositories/2462" target="_blank"><img src="https://trendshift.io/api/badge/repositories/2462" alt="1Panel-dev%2F1Panel | Trendshift" style="width: 180px; height: auto;" /></a>
   <a href="https://hellogithub.com/repository/71791baf930149ac9b84e1acf186573f" target="_blank"><img src="https://api.hellogithub.com/v1/widgets/recommend.svg?rid=71791baf930149ac9b84e1acf186573f&claim_uid=p8vB3kP5CMrthiL&theme=dark&theme=neutral" alt="Featured｜HelloGitHub" style="width: 180px; height: auto;" /></a>
-  <a href="https://market.aliyun.com/products/53690006/cmjj00062740.html?userCode=kmemb8jp" target="_blank"><img src="https://img.alicdn.com/imgextra/i2/O1CN01H5JIwY1rZ0OobDjnJ_!!6000000005644-2-tps-1000-216.png" alt="1Panel-dev%2F1Panel | Aliyun" style="width: 180px; height: auto;" /></a>
 </p>
 <p align="center">
   <a href="https://www.gnu.org/licenses/gpl-3.0.html"><img src="https://shields.io/github/license/1Panel-dev/1Panel?color=%231890FF" alt="License: GPL v3"></a>
   <a href="https://app.codacy.com/gh/1Panel-dev/1Panel?utm_source=github.com&utm_medium=referral&utm_content=1Panel-dev/1Panel&utm_campaign=Badge_Grade_Dashboard"><img src="https://app.codacy.com/project/badge/Grade/da67574fd82b473992781d1386b937ef" alt="Codacy"></a>
   <a href="https://github.com/1Panel-dev/1Panel/releases"><img src="https://img.shields.io/github/v/release/1Panel-dev/1Panel" alt="GitHub release"></a>
   <a href="https://github.com/1Panel-dev/1Panel"><img src="https://img.shields.io/github/stars/1Panel-dev/1Panel?color=%231890FF&style=flat-square" alt="GitHub Stars"></a>
-  <a href="https://gitee.com/fit2cloud-feizhiyun/1Panel"><img src="https://gitee.com/fit2cloud-feizhiyun/1Panel/badge/star.svg?theme=gvp" alt="Gitee Stars"></a><br>
+  <a href="https://gitee.com/fit2cloud-feizhiyun/1Panel"><img src="https://gitee.com/fit2cloud-feizhiyun/1Panel/badge/star.svg?theme=gvp" alt="Gitee Stars"></a>
+  <a href="https://gitcode.com/feizhiyun/1Panel"><img src="https://gitcode.com/feizhiyun/1Panel/star/badge.svg" alt="GitCode Stars"></a><br>
 </p>
 <p align="center">
   <a href="/README.md"><img alt="English" src="https://img.shields.io/badge/English-d9d9d9"></a>
