@@ -2566,6 +2566,8 @@ const message = {
             'Scripts to execute before compilation, usually for downloading module source code, installing dependencies, etc.',
         buildHelper:
             'Click build after adding/modifying a module. OpenResty will automatically restart upon successful build.',
+        defaultHttps: 'HTTPS Anti-tampering',
+        defaultHttpsHelper1: 'Enabling this can resolve HTTPS tampering issues.',
     },
     ssl: {
         create: 'Request',
