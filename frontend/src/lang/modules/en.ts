@@ -2513,6 +2513,7 @@ const message = {
         browserCacheTime: 'Browser Cache Time',
         browserCacheTimeHelper:
             'The time static resources are cached locally in the browser, reducing redundant requests. Users will use the local cache directly before it expires when refreshing the page.',
+        donotLinkeDB: 'Do Not Link Database',
     },
     php: {
         short_open_tag: 'Short tag support',
