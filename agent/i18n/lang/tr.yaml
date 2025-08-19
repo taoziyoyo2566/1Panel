@@ -448,3 +448,7 @@ DiskUsedAlert: "1Panel diski '{{ .name }}' {{ .used }} kullanıldı. Detaylar i�
 ResourceAlert: "1Panel üzerinde ortalama {{ .time }} dakikalık {{ .name }} kullanım oranı {{ .used }}. Detaylar için panele giriş yapın."
 PanelVersionAlert: "1Panel için yeni bir sürüm mevcut. Güncellemek için panele giriş yapın."
 PanelPwdExpirationAlert: "1Panel şifreniz {{ .day }} gün içinde sona erecek. Detaylar için panele giriş yapın."
+CommonAlert: "1Panel'iniz, {{ .msg }}. Detaylar için panele giriş yapınız."
+NodeExceptionAlert: "1Panel'iniz, {{ .num }} düğümde sorun var. Detaylar için panele giriş yapınız."
+LicenseExceptionAlert: "1Panel'iniz, {{ .num }} lisansda sorun var. Detaylar için panele giriş yapınız."
+SSHAndPanelLoginAlert: "1Panel'iniz, {{ .ip }} adresinden {{ .name }} paneline anormal giriş tespit edildi. Detaylar için panele giriş yapınız."
