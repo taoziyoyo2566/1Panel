@@ -2220,6 +2220,10 @@ const message = {
         null: 'nenhum',
         nginxConfig: 'Configuração Nginx',
         websiteConfig: 'Configurações do site',
+        proxySettings: 'Configurações de Proxy',
+        advancedSettings: 'Configurações Avançadas',
+        cacheSettings: 'Configurações de Cache',
+        sniSettings: 'Configurações de SNI',
         basic: 'Básico',
         source: 'Configuração',
         security: 'Segurança',
@@ -2347,11 +2351,15 @@ const message = {
         modifierHelper:
             'Exemplo: "=" é correspondência exata, "~" é correspondência regular, "^~" corresponde ao início do caminho, etc.',
         replace: 'Substituições de texto',
+        replaceHelper:
+            'O recurso de substituição de texto do nginx permite a substituição de strings no conteúdo da resposta durante o proxy reverso. É comumente usado para modificar links, endereços de API, etc., em arquivos HTML, CSS, JavaScript e outros retornados pelo backend. Suporta correspondência de expressão regular para necessidades complexas de substituição de conteúdo.',
         addReplace: 'Adicionar',
         replaced: 'String de busca (não pode estar vazia)',
         replaceText: 'Substituir por string',
         replacedErr: 'A string de busca não pode estar vazia',
         replacedErr2: 'A string de busca não pode ser repetida',
+        replacedListEmpty: 'Nenhuma regra de substituição de texto',
+        proxySslName: 'Nome SNI do Proxy',
         basicAuth: 'Autenticação básica',
         editBasicAuthHelper:
             'A senha é criptografada de forma assimétrica e não pode ser exibida. A edição requer a redefinição da senha',
