@@ -2744,7 +2744,7 @@ const message = {
         filesystem: '文件系統',
         unmounted: '未掛載',
         cannotOperate: '無法操作',
-        systemDiskHelper: '提示:當前磁盤為系統盤，無法進行操作',
+        systemDiskHelper: '提示：當前磁盤為系統盤，無法進行操作',
         autoMount: '自動掛載',
         model: '設備型號',
         diskType: '磁盤類型',
