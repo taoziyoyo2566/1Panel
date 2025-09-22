@@ -3,6 +3,7 @@ base:
   mode: dev
   is_demo: false
   is_intl: false
+  is_offline: false
   port: 9999
   username: admin
   password: admin123
