@@ -2895,6 +2895,7 @@ const message = {
         forwardHelper1: 'Yerel porta yönlendirmek istiyorsanız, hedef IP "127.0.0.1" olarak ayarlanmalıdır.',
         forwardHelper2: 'Yerel porta yönlendirmek için hedef IP’yi boş bırakın.',
         forwardHelper3: 'Yalnızca IPv4 port yönlendirmesini destekler.',
+        forwardInboundInterface: 'İletme Gelen Ağ Arayüzü',
     },
     runtime: {
         runtime: 'Çalışma Zamanı',

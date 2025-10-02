@@ -2838,6 +2838,7 @@ const message = {
             'Se você deseja redirecionar para a porta local, o IP de destino deve ser definido como "127.0.0.1".',
         forwardHelper2: 'Deixe o IP de destino em branco para redirecionar para a porta local.',
         forwardHelper3: 'Somente suporta redirecionamento de porta IPv4.',
+        forwardInboundInterface: 'Interface de Rede de Entrada para Encaminhamento',
     },
     runtime: {
         runtime: 'Runtime',
