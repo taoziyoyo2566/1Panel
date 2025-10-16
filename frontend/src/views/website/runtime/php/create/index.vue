@@ -379,8 +379,8 @@ const getApp = (appkey: string, mode: string) => {
     getAppByKey(appkey).then((res) => {
         appVersions.value = res.data.versions || [];
         if (res.data.versions.length > 0) {
-            runtime.version = res.data.versions[0];
             if (mode === 'create') {
+                runtime.version = res.data.versions[0];
                 changeVersion();
             } else {
                 initParam.value = true;
@@ -432,6 +432,7 @@ const getRuntime = async (id: number) => {
             rebuild: true,
             source: data.source,
             remark: data.remark,
+            versionn: data.version,
         });
 
         const fileds = data.appParams;
