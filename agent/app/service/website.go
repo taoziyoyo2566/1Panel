@@ -1739,19 +1739,28 @@ func (w WebsiteService) OperateProxy(req request.WebsiteProxyConfig) (err error)
 	location.UpdateDirective("proxy_pass", []string{req.ProxyPass})
 	location.UpdateDirective("proxy_set_header", []string{"Host", req.ProxyHost})
 	location.ChangePath(req.Modifier, req.Match)
+	// Server Cache Settings
 	if req.Cache {
 		if err = openProxyCache(website); err != nil {
 			return
 		}
-		location.AddCache(req.CacheTime, req.CacheUnit, fmt.Sprintf("proxy_cache_zone_of_%s", website.Alias), req.ServerCacheTime, req.ServerCacheUnit)
+		location.AddServerCache(fmt.Sprintf("proxy_cache_zone_of_%s", website.Alias), req.ServerCacheTime, req.ServerCacheUnit)
 	} else {
-		location.RemoveCache(fmt.Sprintf("proxy_cache_zone_of_%s", website.Alias))
+		location.RemoveServerCache(fmt.Sprintf("proxy_cache_zone_of_%s", website.Alias))
 	}
+	// Browser Cache Settings
+	if req.CacheTime != 0 {
+		location.AddBrowserCache(req.CacheTime, req.CacheUnit)
+	} else {
+		location.RemoveBrowserCache()
+	}
+	// Content Replace Settings
 	if len(req.Replaces) > 0 {
 		location.AddSubFilter(req.Replaces)
 	} else {
 		location.RemoveSubFilter()
 	}
+	// SSL Settings
 	if req.SNI {
 		location.UpdateDirective("proxy_ssl_server_name", []string{"on"})
 		if req.ProxySSLName != "" {
@@ -1760,6 +1769,7 @@ func (w WebsiteService) OperateProxy(req request.WebsiteProxyConfig) (err error)
 	} else {
 		location.UpdateDirective("proxy_ssl_server_name", []string{"off"})
 	}
+	// CORS Settings
 	if req.Cors {
 		location.UpdateDirective("add_header", []string{"Access-Control-Allow-Origin", req.AllowOrigins, "always"})
 		if req.AllowMethods != "" {
@@ -1780,7 +1790,7 @@ func (w WebsiteService) OperateProxy(req request.WebsiteProxyConfig) (err error)
 		if req.Preflight {
 			location.AddCorsOption()
 		} else {
-			location.RemoveDirectiveByFullParams("if", []string{"(", "$request_method", "=", "'OPTIONS'", ")"})
+			location.RemoveCorsOption()
 		}
 	} else {
 		location.RemoveDirective("add_header", []string{"Access-Control-Allow-Origin"})

@@ -253,7 +253,7 @@ func (l *Location) ChangePath(Modifier string, Match string) {
 	l.Match = Match
 }
 
-func (l *Location) AddCache(cacheTime int, cacheUint, cacheKey string, serverCacheTime int, serverCacheUint string) {
+func (l *Location) AddBrowserCache(cacheTime int, cacheUint string) {
 	l.RemoveDirective("add_header", []string{"Cache-Control", "no-cache"})
 	l.RemoveDirectiveByFullParams("if", []string{"(", "$uri", "~*", `"\.(gif|png|jpg|css|js|woff|woff2)$"`, ")"})
 	l.RemoveDirectiveByFullParams("if", []string{"(", "$uri", "~*", `"\.(gif|png|jpg|css|js|woff|woff2|jpeg|svg|webp|avif)$"`, ")"})
@@ -271,28 +271,36 @@ func (l *Location) AddCache(cacheTime int, cacheUint, cacheKey string, serverCac
 	newDir.Block = block
 	directives = append(directives, newDir)
 	l.Directives = directives
+	l.CacheTime = cacheTime
+	l.CacheUint = cacheUint
+}
+
+func (l *Location) AddServerCache(cacheKey string, serverCacheTime int, serverCacheUint string) {
 	l.UpdateDirective("proxy_ignore_headers", []string{"Set-Cookie", "Cache-Control", "expires"})
 	l.UpdateDirective("proxy_cache", []string{cacheKey})
 	l.UpdateDirective("proxy_cache_key", []string{"$host$uri$is_args$args"})
 	l.UpdateDirective("proxy_cache_valid", []string{"200", "304", "301", "302", strconv.Itoa(serverCacheTime) + serverCacheUint})
 	l.Cache = true
-	l.CacheTime = cacheTime
-	l.CacheUint = cacheUint
+	l.ServerCacheTime = serverCacheTime
+	l.ServerCacheUint = serverCacheUint
 }
 
-func (l *Location) RemoveCache(cacheKey string) {
+func (l *Location) RemoveBrowserCache() {
 	l.RemoveDirectiveByFullParams("if", []string{"(", "$uri", "~*", `"\.(gif|png|jpg|css|js|woff|woff2)$"`, ")"})
 	l.RemoveDirectiveByFullParams("if", []string{"(", "$uri", "~*", `"\.(gif|png|jpg|css|js|woff|woff2|jpeg|svg|webp|avif)$"`, ")"})
-	l.RemoveDirective("proxy_ignore_headers", []string{"Set-Cookie"})
+	l.UpdateDirective("add_header", []string{"Cache-Control", "no-cache"})
+	l.CacheTime = 0
+	l.CacheUint = ""
+}
+
+func (l *Location) RemoveServerCache(cacheKey string) {
+	l.RemoveDirective("proxy_ignore_headers", []string{"Set-Cookie", "Cache-Control", "expires"})
 	l.RemoveDirective("proxy_cache", []string{cacheKey})
 	l.RemoveDirective("proxy_cache_key", []string{"$host$uri$is_args$args"})
 	l.RemoveDirective("proxy_cache_valid", []string{"200"})
-
-	l.UpdateDirective("add_header", []string{"Cache-Control", "no-cache"})
-
-	l.CacheTime = 0
-	l.CacheUint = ""
 	l.Cache = false
+	l.ServerCacheTime = 0
+	l.ServerCacheUint = ""
 }
 
 func (l *Location) AddSubFilter(subFilters map[string]string) {
@@ -315,6 +323,7 @@ func (l *Location) RemoveSubFilter() {
 }
 
 func (l *Location) AddCorsOption() {
+	l.RemoveCorsOption()
 	newDir := &Directive{
 		Name:       "if",
 		Parameters: []string{"(", "$request_method", "=", "'OPTIONS'", ")"},
@@ -341,4 +350,8 @@ func (l *Location) AddCorsOption() {
 	directives := l.GetDirectives()
 	directives = append(directives, newDir)
 	l.Directives = directives
+}
+
+func (l *Location) RemoveCorsOption() {
+	l.RemoveDirectiveByFullParams("if", []string{"(", "$request_method", "=", "'OPTIONS'", ")"})
 }
