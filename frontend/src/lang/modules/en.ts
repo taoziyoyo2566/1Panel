@@ -2731,6 +2731,9 @@ const message = {
             'Click build after adding/modifying a module. OpenResty will automatically restart upon successful build.',
         defaultHttps: 'HTTPS Anti-tampering',
         defaultHttpsHelper1: 'Enabling this can resolve HTTPS tampering issues.',
+        sslRejectHandshake: 'Reject default SSL handshake',
+        sslRejectHandshakeHelper:
+            'Enabling this can avoid certificate leakage, setting a default website will invalidate this setting',
     },
     ssl: {
         create: 'Request',
