@@ -16,12 +16,14 @@ download_resources() {
     wget https://github.com/1Panel-dev/installer/raw/v2/install.sh
   fi
 
-  if [ ! -f "1panel-core.service" ]; then
-    wget https://github.com/1Panel-dev/installer/raw/v2/1panel-core.service
-  fi
-
-  if [ ! -f "1panel-agent.service" ]; then
-    wget https://github.com/1Panel-dev/installer/raw/v2/1panel-agent.service
+  if [ ! -d "initscript" ]; then
+    wget https://github.com/1Panel-dev/installer/raw/v2/initscript/1panel-core.service
+    wget https://github.com/1Panel-dev/installer/raw/v2/initscript/1panel-agent.service
+    mkdir -p initscript && cd initscript
+    for file in 1panel-core.init 1panel-agent.init 1panel-core.openrc 1panel-agent.openrc 1panel-core.procd 1panel-agent.procd 1panel-core.service 1panel-agent.service; do
+      wget -q https://github.com/1Panel-dev/installer/raw/v2/initscript/$file
+    done
+    cd ..
   fi
 
   if [ ! -d "lang" ]; then

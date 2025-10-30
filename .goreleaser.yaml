@@ -70,11 +70,12 @@ archives:
     wrap_in_directory: true
     files:
       - 1pctl
+      - install.sh
       - 1panel-core.service
       - 1panel-agent.service
-      - install.sh
-      - GeoIP.mmdb
+      - initscript/*
       - lang/*
+      - GeoIP.mmdb
 
 checksum:
   name_template: 'checksums.txt'
