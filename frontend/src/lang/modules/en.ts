@@ -426,7 +426,7 @@ const message = {
         ioDelay: 'I/O latency',
         uptime: 'Uptime',
         runningTime: 'Up since',
-        mem: 'System',
+        mem: 'System Memory',
         swapMem: 'Swap Partition',
 
         runSmoothly: 'Low load',
@@ -436,6 +436,9 @@ const message = {
 
         core: 'Physical core',
         logicCore: 'Logical core',
+        corePercent: 'Core Usage',
+        cpuTop: 'Top 5 Processes by CPU Usage',
+        memTop: 'Top 5 Processes by Memory Usage',
         loadAverage: 'Load average in the last 1 minute | Load average in the last {n} minutes',
         load: 'Load',
         mount: 'Mount point',
@@ -3009,6 +3012,9 @@ const message = {
         stopProcess: 'End',
         viewDetails: 'View details',
         stopProcessWarn: 'Are you sure you want to end this process (PID:{0})?',
+        kill: 'Kill Process',
+        killNow: 'Kill Now',
+        killHelper: 'Killing process {0} may cause some programs to malfunction. Continue?',
         processName: 'Process name',
     },
     tool: {

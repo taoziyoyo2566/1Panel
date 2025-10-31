@@ -422,7 +422,7 @@ const message = {
         ioDelay: 'Latência de I/O',
         uptime: 'Tempo de atividade',
         runningTime: 'Tempo de execução',
-        mem: 'Memória',
+        mem: 'Memória do Sistema',
         swapMem: 'Partição Swap',
 
         runSmoothly: 'Baixo carregamento',
@@ -432,6 +432,9 @@ const message = {
 
         core: 'Núcleo físico',
         logicCore: 'Núcleo lógico',
+        corePercent: 'Uso do Núcleo',
+        cpuTop: 'Top 5 Processos por Uso de CPU',
+        memTop: 'Top 5 Processos por Uso de Memória',
         loadAverage: 'Média de carga nos últimos 1 minuto | Média de carga nos últimos {n} minutos',
         load: 'Carga',
         mount: 'Ponto de montagem',
@@ -2978,6 +2981,9 @@ const message = {
         stopProcess: 'Encerrar',
         viewDetails: 'Detalhes',
         stopProcessWarn: 'Tem certeza de que deseja encerrar este processo (PID:{0})?',
+        kill: 'Encerrar Processo',
+        killNow: 'Encerrar Agora',
+        killHelper: 'Encerrar o processo {0} pode fazer com que alguns programas funcionem incorretamente. Continuar?',
         processName: 'Nome do Processo',
     },
     tool: {
