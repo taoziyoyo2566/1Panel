@@ -2,7 +2,6 @@ package iptables
 
 import (
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -31,10 +30,6 @@ const (
 	AllowSSH        = "-p tcp --dport ssh -j ACCEPT"
 )
 
-var (
-	natListRegex = regexp.MustCompile(`^(\d+)\s+(.+?)\s+(.+?)\s+(.+?)\s+(.+?)\s+(.+?)\s+(.+?)\s+(.+?)\s+(.+?)\s+(.+?)(?:\s+(.+?) .+?:(\d{1,5}(?::\d+)?).+?[ :](.+-.+|(?:.+:)?\d{1,5}(?:-\d{1,5})?))?$`)
-)
-
 const (
 	ACCEPT   = "ACCEPT"
 	DROP     = "DROP"
@@ -45,6 +40,11 @@ const (
 const (
 	FilterTab = "filter"
 	NatTab    = "nat"
+)
+
+var (
+	Chain1PanelBasicAddressPattern = fmt.Sprintf(`-A\s+%s\s+(?:-s\s+(\S+)|(?:-d\s+(\S+)))?\s+-j\s+(\w+)`, Chain1PanelBasic)
+	Chian1PanelBasicPortPattern    = fmt.Sprintf(`-A\s+%s\s+(?:-s\s+(\S+)\s+)?-p\s+(\w+)(?:\s+-m\s+\w+)*\s+--dport\s+(\d+(?::\d+)?)\s+-j\s+(\w+)`, Chain1PanelBasic)
 )
 
 func RunWithStd(tab, rule string) (string, error) {

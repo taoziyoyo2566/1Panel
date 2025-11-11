@@ -29,9 +29,11 @@ import (
 	"github.com/1Panel-dev/1Panel/agent/init/validator"
 	"github.com/1Panel-dev/1Panel/agent/init/viper"
 	"github.com/1Panel-dev/1Panel/agent/utils/encrypt"
+	"github.com/1Panel-dev/1Panel/agent/utils/re"
 )
 
 func Start() {
+	re.Init()
 	viper.Init()
 	dir.Init()
 	log.Init()

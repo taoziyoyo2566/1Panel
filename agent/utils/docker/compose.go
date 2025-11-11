@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"path"
-	"regexp"
 	"strings"
 
 	"github.com/compose-spec/compose-go/v2/loader"
@@ -14,6 +13,8 @@ import (
 	"github.com/docker/compose/v2/pkg/api"
 	"github.com/joho/godotenv"
 	"gopkg.in/yaml.v3"
+
+	"github.com/1Panel-dev/1Panel/agent/utils/re"
 )
 
 type ComposeService struct {
@@ -36,8 +37,7 @@ func GetComposeProject(projectName, workDir string, yml []byte, env []byte, skip
 		Environment: envMap,
 	}
 	projectName = strings.ToLower(projectName)
-	reg, _ := regexp.Compile(`[^a-z0-9_-]+`)
-	projectName = reg.ReplaceAllString(projectName, "")
+	projectName = re.GetRegex(re.ComposeDisallowedCharsPattern).ReplaceAllString(projectName, "")
 	project, err := loader.LoadWithContext(context.Background(), details, func(options *loader.Options) {
 		options.SetProjectName(projectName, true)
 		options.ResolvePaths = true
@@ -141,9 +141,7 @@ func loadEnvFile(env []byte) (map[string]string, error) {
 }
 
 func replaceEnvVars(input string, envVars map[string]string) string {
-	re := regexp.MustCompile(`\$\{([^}]+)\}`)
-
-	return re.ReplaceAllStringFunc(input, func(match string) string {
+	return re.GetRegex(re.ComposeEnvVarPattern).ReplaceAllStringFunc(input, func(match string) string {
 		varName := match[2 : len(match)-1]
 		if value, exists := envVars[varName]; exists {
 			return value
