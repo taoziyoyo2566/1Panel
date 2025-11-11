@@ -21,6 +21,7 @@ import (
 	"github.com/1Panel-dev/1Panel/agent/i18n"
 	"github.com/1Panel-dev/1Panel/agent/utils/cmd"
 	"github.com/1Panel-dev/1Panel/agent/utils/common"
+	"github.com/1Panel-dev/1Panel/agent/utils/controller"
 	"github.com/1Panel-dev/1Panel/agent/utils/copier"
 	"github.com/1Panel-dev/1Panel/agent/utils/files"
 	"gorm.io/gorm"
@@ -285,6 +286,10 @@ func loadDbConn(snap *snapHelper, targetDir string, req dto.SnapshotCreate) erro
 func snapBaseData(snap snapHelper, targetDir string, withDockerConf bool) error {
 	snap.Task.Log("---------------------- 2 / 8 ----------------------")
 	snap.Task.LogStart(i18n.GetMsgByKey("SnapBaseInfo"))
+	svcScriptBakPath := path.Join(targetDir, "scriptbak")
+	if _, err := os.Stat(svcScriptBakPath); err != nil {
+		_ = os.MkdirAll(svcScriptBakPath, os.ModePerm)
+	}
 
 	if global.IsMaster {
 		err := snap.FileOp.CopyFile("/usr/local/bin/1panel-core", targetDir)
@@ -306,19 +311,27 @@ func snapBaseData(snap snapHelper, targetDir string, withDockerConf bool) error 
 	}
 
 	if global.IsMaster {
-		err = snap.FileOp.CopyFile("/etc/systemd/system/1panel-core.service", targetDir)
-		snap.Task.LogWithStatus(i18n.GetWithName("SnapCopy", "/etc/systemd/system/1panel-core.service"), err)
+		svcCorePath, _ := controller.GetServicePath("1panel-core")
+		err = snap.FileOp.CopyFile(svcCorePath, svcScriptBakPath)
+		snap.Task.LogWithStatus(i18n.GetWithName("SnapCopy", svcCorePath), err)
 		if err != nil {
 			return err
 		}
 	}
-
-	err = snap.FileOp.CopyFile("/etc/systemd/system/1panel-agent.service", targetDir)
-	snap.Task.LogWithStatus(i18n.GetWithName("SnapCopy", "/etc/systemd/system/1panel-agent.service"), err)
+	svcAgentName, _ := controller.GetServicePath("1panel-agent")
+	err = snap.FileOp.CopyFile(svcAgentName, svcScriptBakPath)
+	snap.Task.LogWithStatus(i18n.GetWithName("SnapCopy", svcAgentName), err)
 	if err != nil {
 		return err
 	}
-
+	initScriptPath := path.Join(global.Dir.ResourceDir, "initscript")
+	if _, err := os.Stat(initScriptPath); err == nil {
+		err = snap.FileOp.CopyDirWithNewName(initScriptPath, svcScriptBakPath, ".")
+		snap.Task.LogWithStatus(i18n.GetWithName("SnapCopy", initScriptPath), err)
+		if err != nil {
+			return err
+		}
+	}
 	if withDockerConf {
 		if snap.FileOp.Stat(constant.DaemonJsonPath) {
 			err = snap.FileOp.CopyFile(constant.DaemonJsonPath, targetDir)
