@@ -685,7 +685,7 @@ func (u *FirewallService) updatePingStatus(enable string) error {
 		return fmt.Errorf("failed to write to %s: %v", targetPath, err)
 	}
 
-	if err := cmd.RunDefaultBashCf(applyCmd); err != nil {
+	if err := cmd.RunDefaultBashC(applyCmd); err != nil {
 		global.LOG.Warnf("failed to apply persistent config with '%s': %v", applyCmd, err)
 	}
 
@@ -820,7 +820,10 @@ func checkPortUsed(ports, proto string, apps []portOfApp) string {
 }
 
 func loadInitStatus(clientName, tab string) (bool, bool) {
-	if clientName != "firewalld" || (clientName != "iptables" && tab != "forward") {
+	if clientName == "firewalld" {
+		return true, true
+	}
+	if clientName == "ufw" && tab == "forward" {
 		return true, true
 	}
 	switch tab {
@@ -840,7 +843,10 @@ func loadInitStatus(clientName, tab string) (bool, bool) {
 		if exist, _ := iptables.CheckChainExist(iptables.FilterTab, iptables.Chain1PanelBasicAfter); !exist {
 			return false, false
 		}
-		if exist := iptables.CheckRuleExist(iptables.FilterTab, iptables.Chain1PanelBasicAfter, iptables.DropAll); !exist {
+		if exist := iptables.CheckRuleExist(iptables.FilterTab, iptables.Chain1PanelBasicAfter, iptables.DropAllTcp); !exist {
+			return false, false
+		}
+		if exist := iptables.CheckRuleExist(iptables.FilterTab, iptables.Chain1PanelBasicAfter, iptables.DropAllUdp); !exist {
 			return false, false
 		}
 		if bind, _ := iptables.CheckChainBind(iptables.FilterTab, iptables.ChainInput, iptables.Chain1PanelBasicBefore); !bind {
