@@ -13,13 +13,12 @@ import (
 	"github.com/1Panel-dev/1Panel/core/cmd/server/web"
 	"github.com/1Panel-dev/1Panel/core/global"
 	"github.com/1Panel-dev/1Panel/core/i18n"
+	"github.com/1Panel-dev/1Panel/core/init/swagger"
 	"github.com/1Panel-dev/1Panel/core/middleware"
 	rou "github.com/1Panel-dev/1Panel/core/router"
 	"github.com/1Panel-dev/1Panel/core/utils/security"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
-	swaggerfiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 var (
@@ -74,7 +73,8 @@ func Routers() *gin.Engine {
 
 	swaggerRouter := Router.Group("1panel")
 	docs.SwaggerInfo.BasePath = "/api/v2"
-	swaggerRouter.Use(middleware.SessionAuth()).GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+	swaggerRouter.Use(middleware.SessionAuth()).GET("/swagger/*any", swagger.SwaggerHandler())
+
 	PublicGroup := Router.Group("")
 	{
 		PublicGroup.Use(gzip.Gzip(gzip.DefaultCompression))

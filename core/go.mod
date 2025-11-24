@@ -27,7 +27,6 @@ require (
 	github.com/minio/minio-go/v7 v7.0.74
 	github.com/nicksnyder/go-i18n/v2 v2.4.0
 	github.com/oschwald/maxminddb-golang v1.13.1
-	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/sftp v1.13.6
 	github.com/qiniu/go-sdk/v7 v7.21.1
@@ -36,8 +35,7 @@ require (
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
-	github.com/swaggo/files v1.0.1
-	github.com/swaggo/gin-swagger v1.6.0
+	github.com/swaggo/files/v2 v2.0.2
 	github.com/swaggo/swag v1.16.3
 	github.com/tencentyun/cos-go-sdk-v5 v0.7.54
 	github.com/upyun/go-sdk v2.1.0+incompatible
