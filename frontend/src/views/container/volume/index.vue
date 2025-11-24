@@ -1,37 +1,28 @@
 <template>
     <div v-loading="loading">
-        <el-card v-if="dockerStatus != 'Running'" class="mask-prompt">
-            <span>{{ $t('container.serviceUnavailable') }}</span>
-            <el-button type="primary" link class="bt" @click="goSetting">【 {{ $t('container.setting') }} 】</el-button>
-            <span>{{ $t('container.startIn') }}</span>
-        </el-card>
+        <docker-status
+            v-model:isActive="isActive"
+            v-model:isExist="isExist"
+            v-model:loading="loading"
+            @search="search"
+        />
 
-        <LayoutContent :title="$t('container.volume')" :class="{ mask: dockerStatus != 'Running' }">
-            <template #toolbar>
-                <el-row>
-                    <el-col :span="16">
-                        <el-button type="primary" @click="onCreate()">
-                            {{ $t('container.createVolume') }}
-                        </el-button>
-                        <el-button type="primary" plain :disabled="selects.length === 0" @click="batchDelete(null)">
-                            {{ $t('commons.button.delete') }}
-                        </el-button>
-                    </el-col>
-                    <el-col :span="8">
-                        <TableSetting @search="search()" />
-                        <div class="search-button">
-                            <el-input
-                                v-model="searchName"
-                                clearable
-                                @clear="search()"
-                                suffix-icon="Search"
-                                @keyup.enter="search()"
-                                @blur="search()"
-                                :placeholder="$t('commons.button.search')"
-                            ></el-input>
-                        </div>
-                    </el-col>
-                </el-row>
+        <LayoutContent v-if="isExist" :title="$t('container.volume', 2)" :class="{ mask: !isActive }">
+            <template #leftToolBar>
+                <el-button type="primary" @click="onCreate()">
+                    {{ $t('container.createVolume') }}
+                </el-button>
+                <el-button type="primary" plain @click="onClean()">
+                    {{ $t('container.volumePrune') }}
+                </el-button>
+                <el-button :disabled="selects.length === 0" @click="batchDelete(null)">
+                    {{ $t('commons.button.delete') }}
+                </el-button>
+            </template>
+            <template #rightToolBar>
+                <TableSearch @search="search()" v-model:searchName="searchName" />
+                <TableRefresh @search="search()" />
+                <TableSetting title="volume-refresh" @search="search()" />
             </template>
             <template #main>
                 <ComplexTable
@@ -39,11 +30,52 @@
                     v-model:selects="selects"
                     :data="data"
                     @search="search"
+                    :heightDiff="300"
                 >
                     <el-table-column type="selection" fix />
-                    <el-table-column :label="$t('commons.table.name')" min-width="80" prop="name" fix>
+                    <el-table-column
+                        :label="$t('commons.table.name')"
+                        min-width="100"
+                        :width="mobile ? 220 : 'auto'"
+                        prop="name"
+                        fix
+                        show-overflow-tooltip
+                    >
                         <template #default="{ row }">
-                            <Tooltip @click="onInspect(row.name)" :text="row.name" />
+                            <el-text type="primary" class="cursor-pointer" @click="onInspect(row.name)">
+                                {{ row.name }}
+                            </el-text>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="Options" min-width="160">
+                        <template #default="{ row }">
+                            <div v-for="(item, index) in row.options" :key="index">
+                                <div v-if="row.expand || (!row.expand && index < 3)">
+                                    <el-button
+                                        v-if="item.key === 'device'"
+                                        @click="jumpTo(item.value)"
+                                        class="mt-0.5"
+                                        icon="Position"
+                                        plain
+                                        size="small"
+                                    >
+                                        {{ item.key + ': ' + item.value }}
+                                    </el-button>
+                                    <el-button v-else class="mt-0.5" plain size="small">
+                                        {{ item.key + ': ' + item.value }}
+                                    </el-button>
+                                </div>
+                            </div>
+                            <div v-if="!row.expand && row.options?.length > 3">
+                                <el-button type="primary" link @click="row.expand = true">
+                                    {{ $t('commons.button.expand') }}...
+                                </el-button>
+                            </div>
+                            <div v-if="row.expand && row.options?.length > 3">
+                                <el-button type="primary" link @click="row.expand = false">
+                                    {{ $t('commons.button.collapse') }}
+                                </el-button>
+                            </div>
                         </template>
                     </el-table-column>
                     <el-table-column
@@ -51,7 +83,18 @@
                         show-overflow-tooltip
                         min-width="120"
                         prop="mountpoint"
-                    />
+                    >
+                        <template #default="{ row }">
+                            <el-tooltip :content="row.mountpoint">
+                                <el-button
+                                    type="primary"
+                                    icon="FolderOpened"
+                                    link
+                                    @click="routerToFileWithPath(row.mountpoint)"
+                                />
+                            </el-tooltip>
+                        </template>
+                    </el-table-column>
                     <el-table-column
                         :label="$t('container.driver')"
                         show-overflow-tooltip
@@ -69,58 +112,52 @@
             </template>
         </LayoutContent>
 
-        <CodemirrorDialog ref="codemirror" />
+        <OpDialog ref="opRef" @search="search" />
+
+        <CodemirrorDrawer ref="myDetail" />
         <CreateDialog @search="search" ref="dialogCreateRef" />
+        <TaskLog ref="taskLogRef" width="70%" @close="search" />
     </div>
 </template>
 
 <script lang="ts" setup>
-import LayoutContent from '@/layout/layout-content.vue';
-import Tooltip from '@/components/tooltip/index.vue';
-import ComplexTable from '@/components/complex-table/index.vue';
-import TableSetting from '@/components/table-setting/index.vue';
 import CreateDialog from '@/views/container/volume/create/index.vue';
-import CodemirrorDialog from '@/components/codemirror-dialog/codemirror.vue';
-import { reactive, onMounted, ref } from 'vue';
-import { dateFormat } from '@/utils/util';
-import { deleteVolume, searchVolume, inspect, loadDockerStatus } from '@/api/modules/container';
+import CodemirrorDrawer from '@/components/codemirror-pro/drawer.vue';
+import DockerStatus from '@/views/container/docker-status/index.vue';
+import { reactive, ref, computed } from 'vue';
+import { dateFormat, newUUID } from '@/utils/util';
+import { deleteVolume, searchVolume, inspect, containerPrune } from '@/api/modules/container';
 import { Container } from '@/api/interface/container';
+import TaskLog from '@/components/log/task/index.vue';
 import i18n from '@/lang';
-import { useDeleteData } from '@/hooks/use-delete-data';
-import router from '@/routers';
+import { ElMessageBox } from 'element-plus';
+import { GlobalStore } from '@/store';
+import { routerToFileWithPath } from '@/utils/router';
+import { checkFile } from '@/api/modules/files';
+import { MsgError } from '@/utils/message';
+const globalStore = GlobalStore();
+
+const taskLogRef = ref();
+const mobile = computed(() => {
+    return globalStore.isMobile();
+});
 
 const loading = ref();
-const detailInfo = ref();
-const codemirror = ref();
+const myDetail = ref();
+
+const opRef = ref();
 
 const data = ref();
 const selects = ref<any>([]);
 const paginationConfig = reactive({
+    cacheSizeKey: 'container-volume-page-size',
     currentPage: 1,
-    pageSize: 10,
+    pageSize: Number(localStorage.getItem('container-volume-page-size')) || 20,
     total: 0,
 });
 const searchName = ref();
-
-const dockerStatus = ref('Running');
-const loadStatus = async () => {
-    loading.value = true;
-    await loadDockerStatus()
-        .then((res) => {
-            loading.value = false;
-            dockerStatus.value = res.data;
-            if (dockerStatus.value === 'Running') {
-                search();
-            }
-        })
-        .catch(() => {
-            dockerStatus.value = 'Failed';
-            loading.value = false;
-        });
-};
-const goSetting = async () => {
-    router.push({ name: 'ContainerSetting' });
-};
+const isActive = ref(false);
+const isExist = ref(false);
 
 const dialogCreateRef = ref<DialogExpose>();
 
@@ -132,6 +169,9 @@ const onCreate = async () => {
 };
 
 const search = async () => {
+    if (!isActive.value || !isExist.value) {
+        return;
+    }
     const params = {
         info: searchName.value,
         page: paginationConfig.currentPage,
@@ -151,25 +191,70 @@ const search = async () => {
 
 const onInspect = async (id: string) => {
     const res = await inspect({ id: id, type: 'volume' });
-    detailInfo.value = JSON.stringify(JSON.parse(res.data), null, 2);
+    let detailInfo = JSON.stringify(JSON.parse(res.data), null, 2);
     let param = {
         header: i18n.global.t('commons.button.view'),
-        detailInfo: detailInfo.value,
+        detailInfo: detailInfo,
+        mode: 'json',
     };
-    codemirror.value!.acceptParams(param);
+    myDetail.value!.acceptParams(param);
+};
+
+const onClean = () => {
+    ElMessageBox.confirm(i18n.global.t('container.volumePruneHelper'), i18n.global.t('container.volumePrune'), {
+        confirmButtonText: i18n.global.t('commons.button.confirm'),
+        cancelButtonText: i18n.global.t('commons.button.cancel'),
+        type: 'info',
+    }).then(async () => {
+        loading.value = true;
+        let params = {
+            taskID: newUUID(),
+            pruneType: 'volume',
+            withTagAll: false,
+        };
+        await containerPrune(params)
+            .then(() => {
+                loading.value = false;
+                openTaskLog(params.taskID);
+            })
+            .catch(() => {
+                loading.value = false;
+            });
+    });
+};
+const openTaskLog = (taskID: string) => {
+    taskLogRef.value.openWithTaskID(taskID);
+};
+
+const jumpTo = async (path: any) => {
+    await checkFile(path, false).then((res) => {
+        if (res.data) {
+            routerToFileWithPath(path);
+        } else {
+            MsgError(i18n.global.t('file.noSuchFile'));
+        }
+    });
 };
 
 const batchDelete = async (row: Container.VolumeInfo | null) => {
-    let names: Array<string> = [];
-    if (row === null) {
+    let names = [];
+    if (row) {
+        names.push(row.name);
+    } else {
         selects.value.forEach((item: Container.VolumeInfo) => {
             names.push(item.name);
         });
-    } else {
-        names.push(row.name);
     }
-    await useDeleteData(deleteVolume, { names: names }, 'commons.msg.delete');
-    search();
+    opRef.value.acceptParams({
+        title: i18n.global.t('commons.button.delete'),
+        names: names,
+        msg: i18n.global.t('commons.msg.operatorHelper', [
+            i18n.global.t('container.volume'),
+            i18n.global.t('commons.button.delete'),
+        ]),
+        api: deleteVolume,
+        params: { names: names },
+    });
 };
 
 const buttons = [
@@ -180,8 +265,4 @@ const buttons = [
         },
     },
 ];
-
-onMounted(() => {
-    loadStatus();
-});
 </script>

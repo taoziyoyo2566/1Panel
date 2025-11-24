@@ -1,10 +1,13 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 import { Layout } from '@/routers/constant';
 
-const modules = import.meta.globEager('./modules/*.ts');
+let modules: Record<string, RouteRecordRaw> = import.meta.glob('./modules/*.ts', { eager: true });
+const xpackModules: Record<string, RouteRecordRaw> = import.meta.glob('../xpack/routers/*.ts', { eager: true });
+modules = { ...modules, ...xpackModules };
 
 const homeRouter: RouteRecordRaw = {
     path: '/',
+    name: 'Home-Menu',
     component: Layout,
     redirect: '/',
     meta: {
@@ -28,7 +31,7 @@ export const routerArray: RouteRecordRaw[] = [];
 
 export const rolesRoutes = [
     ...Object.keys(modules)
-        .map((key) => modules[key].default)
+        .map((key) => modules[key]['default'])
         .sort((r1, r2) => {
             r1.sort ??= Number.MAX_VALUE;
             r2.sort ??= Number.MAX_VALUE;
@@ -45,8 +48,11 @@ export const menuList: RouteRecordRaw[] = [];
 rolesRoutes.forEach((item) => {
     let menuItem = JSON.parse(JSON.stringify(item));
     let menuChildren: RouteRecordRaw[] = [];
+    if (menuItem.children == undefined) {
+        return;
+    }
     menuItem.children.forEach((child: any) => {
-        if (child.hidden == null || child.hidden == false) {
+        if (child.hidden == undefined || child.hidden == false) {
             menuChildren.push(child);
         }
     });
@@ -66,6 +72,12 @@ export const routes: RouteRecordRaw[] = [
             requiresAuth: false,
             key: 'login',
         },
+    },
+    {
+        path: '/:code?',
+        name: 'entrance',
+        component: () => import('@/views/login/index.vue'),
+        props: true,
     },
     ...routerArray,
     {

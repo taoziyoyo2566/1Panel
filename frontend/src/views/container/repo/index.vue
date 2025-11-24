@@ -1,34 +1,22 @@
 <template>
     <div v-loading="loading">
-        <el-card v-if="dockerStatus != 'Running'" class="mask-prompt">
-            <span>{{ $t('container.serviceUnavailable') }}</span>
-            <el-button type="primary" link class="bt" @click="goSetting">【 {{ $t('container.setting') }} 】</el-button>
-            <span>{{ $t('container.startIn') }}</span>
-        </el-card>
+        <docker-status
+            v-model:isActive="isActive"
+            v-model:isExist="isExist"
+            v-model:loading="loading"
+            @search="search"
+        />
 
-        <LayoutContent :title="$t('container.repo')" :class="{ mask: dockerStatus != 'Running' }">
-            <template #toolbar>
-                <el-row>
-                    <el-col :span="16">
-                        <el-button type="primary" @click="onOpenDialog('add')">
-                            {{ $t('container.createRepo') }}
-                        </el-button>
-                    </el-col>
-                    <el-col :span="8">
-                        <TableSetting @search="search()" />
-                        <div class="search-button">
-                            <el-input
-                                v-model="searchName"
-                                clearable
-                                @clear="search()"
-                                suffix-icon="Search"
-                                @keyup.enter="search()"
-                                @blur="search()"
-                                :placeholder="$t('commons.button.search')"
-                            ></el-input>
-                        </div>
-                    </el-col>
-                </el-row>
+        <LayoutContent v-if="isExist" :title="$t('container.repo', 2)" :class="{ mask: !isActive }">
+            <template #leftToolBar>
+                <el-button type="primary" @click="onOpenDialog('add')">
+                    {{ $t('container.createRepo') }}
+                </el-button>
+            </template>
+            <template #rightToolBar>
+                <TableSearch @search="search()" v-model:searchName="searchName" />
+                <TableRefresh @search="search()" />
+                <TableSetting title="repo-refresh" @search="search()" />
             </template>
             <template #main>
                 <ComplexTable
@@ -36,6 +24,7 @@
                     v-model:selects="selects"
                     :data="data"
                     @search="search"
+                    :heightDiff="300"
                 >
                     <el-table-column :label="$t('commons.table.name')" prop="name" min-width="60" />
                     <el-table-column
@@ -45,18 +34,10 @@
                         min-width="100"
                         fix
                     />
-                    <el-table-column :label="$t('container.protocol')" prop="protocol" min-width="60" fix />
+                    <el-table-column :label="$t('commons.table.protocol')" prop="protocol" min-width="60" fix />
                     <el-table-column :label="$t('commons.table.status')" prop="status" min-width="60" fix>
                         <template #default="{ row }">
-                            <el-tag v-if="row.status === 'Success'" type="success">
-                                {{ $t('commons.status.success') }}
-                            </el-tag>
-                            <el-tooltip v-else effect="dark" placement="bottom">
-                                <template #content>
-                                    <div style="width: 300px; word-break: break-all">{{ row.message }}</div>
-                                </template>
-                                <el-tag type="danger">{{ $t('commons.status.failed') }}</el-tag>
-                            </el-tooltip>
+                            <Status :status="row.status" :msg="row.message" />
                         </template>
                     </el-table-column>
                     <el-table-column
@@ -66,58 +47,48 @@
                         fix
                         :formatter="dateFormat"
                     />
-                    <fu-table-operations :buttons="buttons" :label="$t('commons.table.operate')" />
+                    <fu-table-operations width="200px" :buttons="buttons" :label="$t('commons.table.operate')" />
                 </ComplexTable>
             </template>
         </LayoutContent>
+
+        <OpDialog ref="opRef" @search="search" @submit="submitDelete" />
         <OperatorDialog @search="search" ref="dialogRef" />
+        <ConfirmDialog ref="confirmDialog" @confirm="submitDelete" />
     </div>
 </template>
 
 <script lang="ts" setup>
-import LayoutContent from '@/layout/layout-content.vue';
-import ComplexTable from '@/components/complex-table/index.vue';
-import TableSetting from '@/components/table-setting/index.vue';
 import OperatorDialog from '@/views/container/repo/operator/index.vue';
-import { reactive, onMounted, ref } from 'vue';
+import { reactive, ref } from 'vue';
 import { dateFormat } from '@/utils/util';
 import { Container } from '@/api/interface/container';
-import { checkRepoStatus, deleteImageRepo, loadDockerStatus, searchImageRepo } from '@/api/modules/container';
+import { checkRepoStatus, deleteImageRepo, searchImageRepo } from '@/api/modules/container';
+import DockerStatus from '@/views/container/docker-status/index.vue';
 import i18n from '@/lang';
-import router from '@/routers';
-import { ElMessageBox } from 'element-plus';
 
 const loading = ref();
 const data = ref();
 const selects = ref<any>([]);
 const paginationConfig = reactive({
+    cacheSizeKey: 'image-repo-page-size',
     currentPage: 1,
-    pageSize: 10,
+    pageSize: Number(localStorage.getItem('image-repo-page-size')) || 20,
     total: 0,
 });
 const searchName = ref();
 
-const dockerStatus = ref('Running');
-const loadStatus = async () => {
-    loading.value = true;
-    await loadDockerStatus()
-        .then((res) => {
-            loading.value = false;
-            dockerStatus.value = res.data;
-            if (dockerStatus.value === 'Running') {
-                search();
-            }
-        })
-        .catch(() => {
-            dockerStatus.value = 'Failed';
-            loading.value = false;
-        });
-};
-const goSetting = async () => {
-    router.push({ name: 'ContainerSetting' });
-};
+const opRef = ref();
+const confirmDialog = ref();
+const currentRepo = ref();
+
+const isActive = ref();
+const isExist = ref();
 
 const search = async () => {
+    if (!isActive.value || !isExist.value) {
+        return;
+    }
     let params = {
         info: searchName.value,
         page: paginationConfig.currentPage,
@@ -150,13 +121,38 @@ const onOpenDialog = async (
 };
 
 const onDelete = async (row: Container.RepoInfo) => {
-    ElMessageBox.confirm(i18n.global.t('commons.msg.delete'), i18n.global.t('commons.button.delete'), {
-        confirmButtonText: i18n.global.t('commons.button.confirm'),
-        cancelButtonText: i18n.global.t('commons.button.cancel'),
-    }).then(async () => {
-        await deleteImageRepo({ ids: [row.id] });
-        search();
+    currentRepo.value = row.id;
+    if (row.protocol === 'http') {
+        let params = {
+            header: i18n.global.t('container.repo'),
+            operationInfo: i18n.global.t('container.httpRepoHelper'),
+            submitInputInfo: i18n.global.t('database.restartNow'),
+        };
+        confirmDialog.value!.acceptParams(params);
+        return;
+    }
+    opRef.value.acceptParams({
+        title: i18n.global.t('commons.button.delete'),
+        names: [row.name],
+        msg: i18n.global.t('commons.msg.operatorHelper', [
+            i18n.global.t('container.repo'),
+            i18n.global.t('commons.button.delete'),
+        ]),
+        api: null,
+        params: null,
     });
+};
+
+const submitDelete = async () => {
+    loading.value = true;
+    await deleteImageRepo(currentRepo.value)
+        .then(() => {
+            loading.value = false;
+            search();
+        })
+        .catch(() => {
+            loading.value = false;
+        });
 };
 
 const onCheckConn = async (row: Container.RepoInfo) => {
@@ -174,6 +170,9 @@ const onCheckConn = async (row: Container.RepoInfo) => {
 const buttons = [
     {
         label: i18n.global.t('commons.button.sync'),
+        disabled: (row: Container.RepoInfo) => {
+            return row.id === 1;
+        },
         click: (row: Container.RepoInfo) => {
             onCheckConn(row);
         },
@@ -181,7 +180,7 @@ const buttons = [
     {
         label: i18n.global.t('commons.button.edit'),
         disabled: (row: Container.RepoInfo) => {
-            return row.downloadUrl === 'docker.io';
+            return row.id === 1;
         },
         click: (row: Container.RepoInfo) => {
             onOpenDialog('edit', row);
@@ -190,15 +189,11 @@ const buttons = [
     {
         label: i18n.global.t('commons.button.delete'),
         disabled: (row: Container.RepoInfo) => {
-            return row.downloadUrl === 'docker.io';
+            return row.id === 1;
         },
         click: (row: Container.RepoInfo) => {
             onDelete(row);
         },
     },
 ];
-
-onMounted(() => {
-    loadStatus();
-});
 </script>

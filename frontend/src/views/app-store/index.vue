@@ -1,7 +1,7 @@
 <template>
     <div>
         <div v-if="showButton">
-            <RouterButton :buttons="buttons" />
+            <RouterButton :buttons="buttons"></RouterButton>
         </div>
         <LayoutContent>
             <router-view></router-view>
@@ -10,14 +10,13 @@
 </template>
 
 <script lang="ts" setup>
-import LayoutContent from '@/layout/layout-content.vue';
-import RouterButton from '@/components/router-button/index.vue';
 import i18n from '@/lang';
 import { onMounted, ref } from 'vue';
-import { SearchAppInstalled } from '@/api/modules/app';
-import bus from './bus';
+import { searchAppInstalled } from '@/api/modules/app';
+import bus from '@/global/bus';
 let showButton = ref(false);
-const buttons = [
+
+let buttons = [
     {
         label: i18n.global.t('app.all'),
         path: '/apps/all',
@@ -31,10 +30,14 @@ const buttons = [
         path: '/apps/upgrade',
         count: 0,
     },
+    {
+        label: i18n.global.t('commons.button.set'),
+        path: '/apps/setting',
+    },
 ];
 
 const search = () => {
-    SearchAppInstalled({ update: true, page: 1, pageSize: 100 })
+    searchAppInstalled({ update: true, page: 1, pageSize: 100 })
         .then((res) => {
             if (res.data.items) {
                 buttons[2].count = res.data.items.length;

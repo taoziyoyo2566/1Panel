@@ -1,8 +1,9 @@
 import { Layout } from '@/routers/constant';
 
 const settingRouter = {
-    sort: 8,
+    sort: 12,
     path: '/settings',
+    name: 'Setting-Menu',
     component: Layout,
     redirect: '/settings/panel',
     meta: {
@@ -23,8 +24,22 @@ const settingRouter = {
                     component: () => import('@/views/setting/panel/index.vue'),
                     hidden: true,
                     meta: {
+                        parent: 'menu.settings',
+                        title: 'setting.panel',
                         requiresAuth: true,
-                        activeMenu: 'Setting',
+                        activeMenu: '/settings',
+                    },
+                },
+                {
+                    path: 'alert',
+                    name: 'Alert',
+                    component: () => import('@/views/setting/alert/index.vue'),
+                    hidden: true,
+                    meta: {
+                        parent: 'menu.settings',
+                        title: 'xpack.alert.alertNotice',
+                        requiresAuth: true,
+                        activeMenu: '/settings',
                     },
                 },
                 {
@@ -33,8 +48,22 @@ const settingRouter = {
                     component: () => import('@/views/setting/backup-account/index.vue'),
                     hidden: true,
                     meta: {
+                        parent: 'menu.settings',
+                        title: 'setting.backupAccount',
                         requiresAuth: true,
-                        activeMenu: 'Setting',
+                        activeMenu: '/settings',
+                    },
+                },
+                {
+                    path: 'license',
+                    name: 'License',
+                    component: () => import('@/views/setting/license/index.vue'),
+                    hidden: true,
+                    meta: {
+                        parent: 'menu.settings',
+                        title: 'setting.license',
+                        requiresAuth: true,
+                        activeMenu: '/settings',
                     },
                 },
                 {
@@ -43,18 +72,10 @@ const settingRouter = {
                     component: () => import('@/views/setting/about/index.vue'),
                     hidden: true,
                     meta: {
+                        parent: 'menu.settings',
+                        title: 'setting.about',
                         requiresAuth: true,
-                        activeMenu: 'Setting',
-                    },
-                },
-                {
-                    path: 'monitor',
-                    name: 'Monitor',
-                    component: () => import('@/views/setting/monitor/index.vue'),
-                    hidden: true,
-                    meta: {
-                        requiresAuth: true,
-                        activeMenu: 'Setting',
+                        activeMenu: '/settings',
                     },
                 },
                 {
@@ -63,8 +84,10 @@ const settingRouter = {
                     component: () => import('@/views/setting/safe/index.vue'),
                     hidden: true,
                     meta: {
+                        parent: 'menu.settings',
+                        title: 'setting.safe',
                         requiresAuth: true,
-                        activeMenu: 'Setting',
+                        activeMenu: '/settings',
                     },
                 },
                 {
@@ -73,8 +96,10 @@ const settingRouter = {
                     hidden: true,
                     component: () => import('@/views/setting/snapshot/index.vue'),
                     meta: {
+                        parent: 'menu.settings',
+                        title: 'setting.snapshot',
                         requiresAuth: true,
-                        activeMenu: 'Setting',
+                        activeMenu: '/settings',
                     },
                 },
                 {
@@ -85,6 +110,7 @@ const settingRouter = {
                     meta: {
                         requiresAuth: true,
                         activeMenu: 'Expired',
+                        ignoreTab: true,
                     },
                 },
             ],

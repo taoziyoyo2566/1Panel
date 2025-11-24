@@ -1,10 +1,10 @@
 <template>
     <el-row :gutter="20" v-loading="loading">
-        <el-col :span="8" :offset="1">
-            <el-form-item prop="enable" :label="$t('website.enableOrNot')">
-                <el-switch v-model="enable" @change="changeEnable"></el-switch>
-            </el-form-item>
-            <el-form ref="limitForm" label-position="left" :model="form" :rules="rules" label-width="100px">
+        <el-col :xs="24" :sm="18" :md="8" :lg="8" :xl="8">
+            <el-form ref="limitForm" label-position="right" :model="form" :rules="rules" label-width="100px">
+                <el-form-item prop="enable" :label="$t('website.enableOrNot')">
+                    <el-switch v-model="enable" @change="changeEnable"></el-switch>
+                </el-form-item>
                 <el-form-item :label="$t('website.limit')">
                     <el-select v-model="ruleKey" @change="changeRule(ruleKey)">
                         <el-option :label="$t('website.current')" :value="'current'"></el-option>
@@ -28,11 +28,13 @@
                     <el-input v-model.number="form.rate" maxlength="15"></el-input>
                     <span class="input-help">{{ $t('website.rateHelper') }}</span>
                 </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="submit(limitForm)" :disabled="loading">
+                        <span v-if="enable">{{ $t('commons.button.save') }}</span>
+                        <span v-else>{{ $t('commons.button.saveAndEnable') }}</span>
+                    </el-button>
+                </el-form-item>
             </el-form>
-            <el-button type="primary" @click="submit(limitForm)" :disabled="loading">
-                <span v-if="enable">{{ $t('commons.button.save') }}</span>
-                <span v-else>{{ $t('commons.button.saveAndEnable') }}</span>
-            </el-button>
         </el-col>
     </el-row>
 </template>
@@ -40,7 +42,7 @@
 <script lang="ts" setup>
 import { checkNumberRange, Rules } from '@/global/form-rules';
 import { Website } from '@/api/interface/website';
-import { GetNginxConfig, UpdateNginxConfig } from '@/api/modules/website';
+import { getNginxConfig, updateNginxConfig } from '@/api/modules/website';
 import { FormInstance } from 'element-plus';
 import { computed, onMounted, reactive, ref } from 'vue';
 import i18n from '@/lang';
@@ -93,7 +95,7 @@ let ruleKey = ref('');
 
 const search = (scopeReq: Website.NginxScopeReq) => {
     loading.value = true;
-    GetNginxConfig(scopeReq)
+    getNginxConfig(scopeReq)
         .then((res) => {
             ruleKey.value = 'current';
             if (res.data) {
@@ -143,7 +145,7 @@ const submit = async (formEl: FormInstance | undefined) => {
         if (req.operate === 'add') {
             enable.value = true;
         }
-        UpdateNginxConfig(req)
+        updateNginxConfig(req)
             .then(() => {
                 MsgSuccess(i18n.global.t('commons.msg.updateSuccess'));
                 search(req);

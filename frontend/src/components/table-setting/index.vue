@@ -1,74 +1,75 @@
 <template>
     <div>
-        <el-popover placement="bottom-start" :width="200" trigger="click">
-            <template #reference>
-                <el-button round class="timer-button">{{ $t('commons.table.tableSetting') }}</el-button>
+        <el-dropdown @command="changeRefresh">
+            <el-button class="timer-button">
+                {{ refreshRateUnit === 0 ? $t('commons.table.noRefresh') : refreshRateUnit + 's' }}
+            </el-button>
+            <template #dropdown>
+                <el-dropdown-menu>
+                    <el-dropdown-item :command="0">{{ $t('commons.table.noRefresh') }}</el-dropdown-item>
+                    <el-dropdown-item :command="5">5s</el-dropdown-item>
+                    <el-dropdown-item :command="10">10s</el-dropdown-item>
+                    <el-dropdown-item :command="30">30s</el-dropdown-item>
+                    <el-dropdown-item :command="60">60s</el-dropdown-item>
+                    <el-dropdown-item :command="120">120s</el-dropdown-item>
+                    <el-dropdown-item :command="300">300s</el-dropdown-item>
+                </el-dropdown-menu>
             </template>
-            <div style="margin-left: 15px">
-                <div>
-                    <span>{{ $t('commons.table.autoRefresh') }}</span>
-                    <el-switch style="margin-left: 5px" v-model="autoRefresh" @change="changeRefresh"></el-switch>
-                </div>
-                <div>
-                    <span>{{ $t('commons.table.refreshRate') }}</span>
-                    <el-select style="margin-left: 5px; width: 80px" v-model="refreshRate" @change="changeRefresh">
-                        <el-option label="5s" :value="5"></el-option>
-                        <el-option label="10s" :value="10"></el-option>
-                        <el-option label="30s" :value="30"></el-option>
-                        <el-option label="1min" :value="60"></el-option>
-                        <el-option label="2min" :value="120"></el-option>
-                        <el-option label="5min" :value="300"></el-option>
-                    </el-select>
-                </div>
-            </div>
-        </el-popover>
+        </el-dropdown>
     </div>
 </template>
 
 <script setup lang="ts">
-import { onUnmounted, ref } from 'vue';
+import { onMounted, onUnmounted, ref } from 'vue';
 defineOptions({ name: 'TableSetting' });
 
-const autoRefresh = ref<boolean>(false);
-const refreshRate = ref<number>(10);
+const refreshRateUnit = ref<number>(0);
 const emit = defineEmits(['search']);
+const props = defineProps({
+    title: String,
+    rate: Number,
+});
 
 let timer: NodeJS.Timer | null = null;
 
-const changeRefresh = () => {
-    if (autoRefresh.value) {
+const changeRefresh = (command: number) => {
+    refreshRateUnit.value = command || 0;
+    if (refreshRateUnit.value !== 0) {
         if (timer) {
             clearInterval(Number(timer));
             timer = null;
         }
         timer = setInterval(() => {
             emit('search');
-        }, 1000 * refreshRate.value);
+        }, 1000 * refreshRateUnit.value);
     } else {
         if (timer) {
             clearInterval(Number(timer));
             timer = null;
         }
     }
-};
-
-const startTimer = () => {
-    autoRefresh.value = true;
-    changeRefresh();
-};
-const endTimer = () => {
-    autoRefresh.value = false;
-    changeRefresh();
+    localStorage.setItem(props.title, refreshRateUnit.value + '');
 };
 
 onUnmounted(() => {
     clearInterval(Number(timer));
     timer = null;
+    if (props.title) {
+        localStorage.setItem(props.title, refreshRateUnit.value + '');
+    }
 });
 
-defineExpose({
-    startTimer,
-    endTimer,
+onMounted(() => {
+    if (props.title && localStorage.getItem(props.title) != null) {
+        let rate = Number(localStorage.getItem(props.title));
+        refreshRateUnit.value = rate ? Number(rate) : 0;
+        changeRefresh(refreshRateUnit.value);
+        return;
+    }
+    if (props.rate) {
+        refreshRateUnit.value = props.rate;
+        changeRefresh(refreshRateUnit.value);
+    }
 });
 </script>
 

@@ -1,46 +1,80 @@
 <template>
-    <el-dialog v-model="open" :title="$t('app.checkTitle')" width="50%" :close-on-click-modal="false">
+    <DialogPro v-model="open" :title="$t('app.checkTitle')" size="large">
         <el-row>
-            <el-alert
-                type="warning"
-                :description="$t('app.deleteHelper', [$t('app.app')])"
-                center
-                show-icon
-                :closable="false"
-            />
             <el-col :span="20" :offset="2" v-if="open">
-                <br />
-                <el-descriptions border :column="1">
-                    <el-descriptions-item v-for="(item, key) in map" :key="key">
+                <el-alert
+                    type="error"
+                    :description="$t('app.deleteHelper', [$t('app.app')])"
+                    center
+                    show-icon
+                    :closable="false"
+                />
+                <el-descriptions border :column="1" class="mt-5">
+                    <el-descriptions-item
+                        v-for="(item, key) in map"
+                        :key="key"
+                        label-class-name="check-label"
+                        class-name="check-content"
+                        min-width="60px"
+                    >
                         <template #label>
-                            <a href="javascript:void(0);" @click="toPage(item[0])">{{ $t('app.' + item[0]) }}</a>
+                            <a href="javascript:void(0);" class="check-label-a" @click="toPage(item[0])">
+                                {{ $t('menu.' + item[0]) }}
+                            </a>
                         </template>
-                        <span style="word-break: break-all">
+                        <span class="resources">
                             {{ map.get(item[0]).toString() }}
                         </span>
                     </el-descriptions-item>
                 </el-descriptions>
+                <div v-if="installData.key === 'openresty'" class="mt-5">
+                    <el-checkbox v-model="forceDelete" label="true">{{ $t('app.forceDelete') }}</el-checkbox>
+                    <ErrPrompt :title="$t('app.openrestyDeleteHelper')" />
+                </div>
             </el-col>
         </el-row>
-    </el-dialog>
+
+        <template #footer v-if="forceDelete">
+            <span class="dialog-footer">
+                <el-button @click="open = false">
+                    {{ $t('commons.button.cancel') }}
+                </el-button>
+                <el-button type="primary" @click="onConfirm">
+                    {{ $t('commons.button.confirm') }}
+                </el-button>
+            </span>
+        </template>
+    </DialogPro>
 </template>
 <script lang="ts" setup>
 import { App } from '@/api/interface/app';
+import { installedOp } from '@/api/modules/app';
+import i18n from '@/lang';
+import { MsgSuccess } from '@/utils/message';
+import { routerToName } from '@/utils/router';
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-const router = useRouter();
+import ErrPrompt from '@/components/error-prompt/index.vue';
 
-interface InstallRrops {
+interface CheckRrops {
     items: App.AppInstallResource[];
+    installID: Number;
+    key: string;
 }
-const installData = ref<InstallRrops>({
+const installData = ref<CheckRrops>({
     items: [],
+    installID: 0,
+    key: '',
 });
-let open = ref(false);
-let map = new Map();
+const open = ref(false);
+const map = new Map();
+const forceDelete = ref(false);
+const em = defineEmits(['close']);
 
-const acceptParams = (props: InstallRrops) => {
+const acceptParams = (props: CheckRrops) => {
     map.clear();
+    forceDelete.value = false;
+    installData.value.installID = props.installID;
+    installData.value.key = props.key;
     installData.value.items = [];
     installData.value.items = props.items;
     installData.value.items.forEach((item) => {
@@ -60,14 +94,49 @@ const toPage = (key: string) => {
         open.value = false;
     }
     if (key === 'website') {
-        router.push({ name: 'Website' });
+        routerToName('Website');
     }
     if (key === 'database') {
-        router.push({ name: 'MySQL' });
+        routerToName('MySQL');
     }
+};
+
+const onConfirm = () => {
+    ElMessageBox.confirm(
+        i18n.global.t('app.operatorHelper', [i18n.global.t('commons.button.delete')]),
+        i18n.global.t('commons.button.delete'),
+        {
+            confirmButtonText: i18n.global.t('commons.button.confirm'),
+            cancelButtonText: i18n.global.t('commons.button.cancel'),
+            type: 'info',
+        },
+    ).then(() => {
+        const deleteReq = {
+            operate: 'delete',
+            installId: Number(installData.value.installID),
+            deleteBackup: true,
+            forceDelete: true,
+            deleteDB: true,
+        };
+        installedOp(deleteReq).then(() => {
+            MsgSuccess(i18n.global.t('commons.msg.operationSuccess'));
+            open.value = false;
+            em('close', open);
+        });
+    });
 };
 
 defineExpose({
     acceptParams,
 });
 </script>
+
+<style scoped>
+.resources {
+    word-break: break-all;
+}
+
+.center {
+    text-align: center;
+}
+</style>

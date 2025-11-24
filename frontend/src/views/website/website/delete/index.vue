@@ -1,11 +1,5 @@
 <template>
-    <el-dialog
-        v-model="open"
-        :close-on-click-modal="false"
-        :title="$t('website.delete')"
-        width="30%"
-        :before-close="handleClose"
-    >
+    <DialogPro v-model="open" :title="$t('website.delete') + ' - ' + websiteName" size="small" @close="handleClose">
         <div :key="key" v-loading="loading">
             <el-form ref="deleteForm" label-position="left">
                 <el-form-item>
@@ -14,23 +8,27 @@
                         {{ $t('website.forceDeleteHelper') }}
                     </span>
                 </el-form-item>
-                <el-form-item v-if="type === 'deployment' || runtimeApp">
-                    <el-checkbox
-                        v-model="deleteReq.deleteApp"
-                        :disabled="runtimeApp"
-                        :label="$t('website.deleteApp')"
-                    />
+                <el-form-item v-if="type === 'deployment'">
+                    <el-checkbox v-model="deleteReq.deleteApp" :label="$t('website.deleteApp')" />
                     <span class="input-help">
                         {{ $t('website.deleteAppHelper') }}
-                    </span>
-                    <span class="input-help" style="color: red" v-if="runtimeApp">
-                        {{ $t('website.deleteRuntimeHelper') }}
                     </span>
                 </el-form-item>
                 <el-form-item>
                     <el-checkbox v-model="deleteReq.deleteBackup" :label="$t('website.deleteBackup')" />
                     <span class="input-help">
                         {{ $t('website.deleteBackupHelper') }}
+                    </span>
+                </el-form-item>
+                <el-form-item v-if="type === 'runtime'">
+                    <el-checkbox v-model="deleteReq.deleteDB" :label="$t('app.deleteDB')" />
+                    <span class="input-help">
+                        {{ $t('website.deleteDatabaseHelper') }}
+                    </span>
+                </el-form-item>
+                <el-form-item v-if="subSites != ''">
+                    <span class="input-help text-red-500">
+                        {{ $t('website.deleteSubsite', [subSites]) }}
                     </span>
                 </el-form-item>
                 <el-form-item>
@@ -47,49 +45,47 @@
                 </el-button>
             </span>
         </template>
-    </el-dialog>
+    </DialogPro>
 </template>
 
 <script lang="ts" setup>
-import { DeleteWebsite } from '@/api/modules/website';
+import { deleteWebsite } from '@/api/modules/website';
 import i18n from '@/lang';
 import { FormInstance } from 'element-plus';
 import { ref } from 'vue';
 import { Website } from '@/api/interface/website';
 import { MsgSuccess } from '@/utils/message';
 
-let key = 1;
-let open = ref(false);
-let loading = ref(false);
-let deleteReq = ref({
+const initData = () => ({
     id: 0,
     deleteApp: false,
     deleteBackup: false,
     forceDelete: false,
+    deleteDB: false,
 });
-let type = ref('');
+const key = 1;
+const open = ref(false);
+const loading = ref(false);
+const deleteReq = ref(initData());
+const type = ref('');
 const em = defineEmits(['close']);
 const deleteForm = ref<FormInstance>();
-let deleteInfo = ref('');
-let websiteName = ref('');
-let deleteHelper = ref('');
-const runtimeApp = ref(false);
+const deleteInfo = ref('');
+const websiteName = ref('');
+const deleteHelper = ref('');
+const subSites = ref('');
 
 const handleClose = () => {
     open.value = false;
     em('close', false);
 };
 
-const acceptParams = async (website: Website.Website) => {
-    deleteReq.value = {
-        id: 0,
-        deleteApp: false,
-        deleteBackup: false,
-        forceDelete: false,
-    };
-    if (website.type === 'runtime' && website.appInstallId > 0) {
-        runtimeApp.value = true;
-        deleteReq.value.deleteApp = true;
+const acceptParams = async (website: Website.WebsiteDTO) => {
+    deleteReq.value = initData();
+
+    subSites.value = '';
+    if (website.childSites && website.childSites.length > 0) {
+        subSites.value = website.childSites.join(',');
     }
     deleteInfo.value = '';
     deleteReq.value.id = website.id;
@@ -101,7 +97,7 @@ const acceptParams = async (website: Website.Website) => {
 
 const submit = () => {
     loading.value = true;
-    DeleteWebsite(deleteReq.value)
+    deleteWebsite(deleteReq.value)
         .then(() => {
             handleClose();
             MsgSuccess(i18n.global.t('commons.msg.deleteSuccess'));

@@ -1,21 +1,38 @@
 <template>
     <div>
         <LayoutContent v-loading="loading" :title="$t('logs.system')">
+            <template #search>
+                <LogRouter current="SystemLog" />
+            </template>
+            <template #leftToolBar>
+                <el-select class="p-w-200" v-model="itemName" @change="search()">
+                    <template #prefix>{{ $t('commons.table.date') }}</template>
+                    <el-option v-for="(item, index) in fileList" :key="index" :label="item" :value="item" />
+                </el-select>
+                <el-button>
+                    <el-checkbox @change="changeTail" v-model="isWatch">
+                        {{ $t('commons.button.watch') }}
+                    </el-checkbox>
+                </el-button>
+                <el-radio-group
+                    v-if="globalStore.currentNode === 'local'"
+                    class="ml-2"
+                    @change="search()"
+                    v-model="itemType"
+                >
+                    <el-radio-button :label="$t('logs.agent')" value="Agent" />
+                    <el-radio-button :label="$t('logs.core')" value="Core" />
+                </el-radio-group>
+            </template>
             <template #main>
-                <codemirror
-                    :autofocus="true"
-                    placeholder="None data"
-                    :indent-with-tab="true"
-                    :tabSize="4"
-                    style="height: calc(100vh - 240px)"
-                    :lineWrapping="true"
-                    :matchBrackets="true"
-                    theme="cobalt"
-                    :styleActiveLine="true"
-                    :extensions="extensions"
-                    @ready="handleReady"
-                    v-model="logs"
-                    :disabled="true"
+                <LogFile
+                    ref="logRef"
+                    :config="logConfig"
+                    :default-button="false"
+                    v-if="showLog"
+                    v-model:loading="loading"
+                    v-model:hasContent="hasContent"
+                    :height-diff="330"
                 />
             </template>
         </LayoutContent>
@@ -23,43 +40,50 @@
 </template>
 
 <script setup lang="ts">
-import { Codemirror } from 'vue-codemirror';
-import LayoutContent from '@/layout/layout-content.vue';
-import { javascript } from '@codemirror/lang-javascript';
-import { oneDark } from '@codemirror/theme-one-dark';
-import { nextTick, onMounted, ref, shallowRef } from 'vue';
-import { LoadFile } from '@/api/modules/files';
-import { loadBaseDir } from '@/api/modules/setting';
+import LogFile from '@/components/log/file/index.vue';
+import LogRouter from '@/views/log/router/index.vue';
+import { nextTick, onMounted, reactive, ref } from 'vue';
+import { getSystemFiles } from '@/api/modules/log';
+import { GlobalStore } from '@/store';
+const globalStore = GlobalStore();
 
 const loading = ref();
-const extensions = [javascript(), oneDark];
-const logs = ref();
-const view = shallowRef();
-const handleReady = (payload) => {
-    view.value = payload.view;
+const isWatch = ref();
+const fileList = ref();
+const logRef = ref();
+
+const hasContent = ref(false);
+const logConfig = reactive({
+    type: 'system',
+    name: '',
+    colorMode: 'system',
+});
+const showLog = ref(false);
+const itemName = ref();
+const itemType = ref('Agent');
+
+const changeTail = () => {
+    logRef.value.changeTail(true);
 };
 
-const loadSystemlogs = async () => {
-    const pathRes = await loadBaseDir();
-    let logPath = pathRes.data + '/log';
-    await LoadFile({ path: `${logPath}/1Panel.log` })
-        .then((res) => {
-            loading.value = false;
-            logs.value = res.data;
-            nextTick(() => {
-                const state = view.value.state;
-                view.value.dispatch({
-                    selection: { anchor: state.doc.length, head: state.doc.length },
-                    scrollIntoView: true,
-                });
-            });
-        })
-        .catch(() => {
-            loading.value = false;
-        });
+const loadFiles = async () => {
+    const res = await getSystemFiles();
+    fileList.value = res.data || [];
+    if (fileList.value) {
+        itemName.value = fileList.value[0];
+        search();
+    }
+};
+
+const search = () => {
+    logConfig.name = itemType.value === 'Agent' ? itemName.value : 'Core-' + itemName.value;
+    showLog.value = false;
+    nextTick(() => {
+        showLog.value = true;
+    });
 };
 
 onMounted(() => {
-    loadSystemlogs();
+    loadFiles();
 });
 </script>

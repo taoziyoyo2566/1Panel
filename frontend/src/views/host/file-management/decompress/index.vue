@@ -1,42 +1,35 @@
 <template>
-    <el-drawer
-        v-model="open"
-        :destroy-on-close="true"
-        :close-on-click-modal="false"
-        :before-close="handleClose"
-        size="40%"
-    >
-        <template #header>
-            <DrawerHeader :header="$t('file.deCompress')" :back="handleClose" />
-        </template>
-        <el-row>
-            <el-col :span="22" :offset="1">
-                <el-form
-                    ref="fileForm"
-                    label-position="top"
-                    :model="form"
-                    label-width="100px"
-                    :rules="rules"
-                    v-loading="loading"
-                >
-                    <el-form-item :label="$t('file.name')">
-                        <el-input v-model="name" disabled></el-input>
-                    </el-form-item>
-                    <el-form-item :label="$t('file.deCompressDst')" prop="dst">
-                        <el-input v-model="form.dst">
-                            <template #prepend><FileList :path="form.dst" @choose="getLinkPath"></FileList></template>
-                        </el-input>
-                    </el-form-item>
-                </el-form>
-            </el-col>
-        </el-row>
+    <DrawerPro v-model="open" :header="$t('file.deCompress')" :resource="name" @close="handleClose" size="normal">
+        <el-form
+            ref="fileForm"
+            label-position="top"
+            :model="form"
+            label-width="100px"
+            :rules="rules"
+            v-loading="loading"
+        >
+            <el-form-item :label="$t('commons.table.name')">
+                <el-input v-model="name" disabled></el-input>
+            </el-form-item>
+            <el-form-item :label="$t('file.deCompressDst')" prop="dst">
+                <el-input v-model="form.dst">
+                    <template #prepend>
+                        <el-button icon="Folder" @click="fileRef.acceptParams({ path: form.dst, dir: true })" />
+                    </template>
+                </el-input>
+            </el-form-item>
+            <el-form-item :label="$t('setting.compressPassword')" prop="secret" v-if="name.includes('tar.gz')">
+                <el-input v-model="form.secret"></el-input>
+            </el-form-item>
+        </el-form>
         <template #footer>
             <span class="dialog-footer">
                 <el-button @click="handleClose">{{ $t('commons.button.cancel') }}</el-button>
                 <el-button type="primary" @click="submit(fileForm)">{{ $t('commons.button.confirm') }}</el-button>
             </span>
         </template>
-    </el-drawer>
+    </DrawerPro>
+    <FileList ref="fileRef" @choose="getLinkPath" />
 </template>
 
 <script setup lang="ts">
@@ -45,10 +38,8 @@ import { reactive, ref } from 'vue';
 import { File } from '@/api/interface/file';
 import { FormInstance, FormRules } from 'element-plus';
 import { Rules } from '@/global/form-rules';
-import { DeCompressFile } from '@/api/modules/files';
-import { Mimetypes } from '@/global/mimetype';
+import { deCompressFile } from '@/api/modules/files';
 import FileList from '@/components/file-list/index.vue';
-import DrawerHeader from '@/components/drawer-header/index.vue';
 import { MsgSuccess } from '@/utils/message';
 
 interface CompressProps {
@@ -56,7 +47,7 @@ interface CompressProps {
     dst: string;
     name: string;
     path: string;
-    mimeType: string;
+    type: string;
 }
 
 const rules = reactive<FormRules>({
@@ -65,9 +56,10 @@ const rules = reactive<FormRules>({
 
 const fileForm = ref<FormInstance>();
 let loading = ref(false);
-let form = ref<File.FileDeCompress>({ type: 'zip', dst: '', path: '' });
+let form = ref<File.FileDeCompress>({ type: 'zip', dst: '', path: '', secret: '' });
 let open = ref(false);
 let name = ref('');
+const fileRef = ref();
 
 const em = defineEmits(['close']);
 
@@ -77,14 +69,6 @@ const handleClose = () => {
     }
     open.value = false;
     em('close', open);
-};
-
-const getFileType = (mime: string): string => {
-    if (Mimetypes.get(mime) != undefined) {
-        return String(Mimetypes.get(mime));
-    } else {
-        return '';
-    }
 };
 
 const getLinkPath = (path: string) => {
@@ -98,7 +82,7 @@ const submit = async (formEl: FormInstance | undefined) => {
             return;
         }
         loading.value = true;
-        DeCompressFile(form.value)
+        deCompressFile(form.value)
             .then(() => {
                 MsgSuccess(i18n.global.t('file.deCompressSuccess'));
                 handleClose();
@@ -110,7 +94,7 @@ const submit = async (formEl: FormInstance | undefined) => {
 };
 
 const acceptParams = (props: CompressProps) => {
-    form.value.type = getFileType(props.mimeType);
+    form.value.type = props.type;
     form.value.dst = props.dst;
     form.value.path = props.path;
     name.value = props.name;

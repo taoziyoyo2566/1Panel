@@ -3,7 +3,7 @@
         <RouterButton
             :buttons="[
                 {
-                    label: $t('website.website'),
+                    label: $t('menu.website'),
                     path: '/websites',
                 },
             ]"
@@ -17,46 +17,38 @@
                     :expire-date="website.expireDate"
                 />
             </template>
-            <template #buttons>
+            <template #leftToolBar>
                 <el-button type="primary" :plain="index !== 'basic'" @click="changeTab('basic')">
                     {{ $t('website.basic') }}
                 </el-button>
-                <el-button type="primary" :plain="index !== 'safety'" @click="changeTab('safety')">
-                    {{ $t('website.security') }}
-                </el-button>
                 <el-button type="primary" :plain="index !== 'log'" @click="changeTab('log')">
-                    {{ $t('website.log') }}
+                    {{ $t('commons.button.log') }}
                 </el-button>
                 <el-button type="primary" :plain="index !== 'resource'" @click="changeTab('resource')">
-                    {{ $t('website.source') }}
-                </el-button>
-                <el-button type="primary" v-if="configPHP" :plain="index !== 'php'" @click="changeTab('php')">
-                    PHP
+                    {{ $t('website.source', 2) }}
                 </el-button>
             </template>
             <template #main>
-                <Basic :id="id" v-if="index === 'basic'"></Basic>
-                <Safety :id="id" v-if="index === 'safety'"></Safety>
-                <Log :id="id" v-if="index === 'log'"></Log>
-                <Resource :id="id" v-if="index === 'resource'"></Resource>
-                <PHP :id="id" v-if="index === 'php'"></PHP>
+                <MainDiv :heightDiff="260">
+                    <Basic :website="website" v-if="index === 'basic'" :heightDiff="320"></Basic>
+                    <Log :id="id" v-if="index === 'log'"></Log>
+                    <Resource :id="id" v-if="index === 'resource'"></Resource>
+                </MainDiv>
             </template>
         </LayoutContent>
     </div>
 </template>
 
 <script setup lang="ts">
-import LayoutContent from '@/layout/layout-content.vue';
 import { onMounted, ref, watch } from 'vue';
 import Basic from './basic/index.vue';
-import Safety from './safety/index.vue';
 import Resource from './resource/index.vue';
 import Log from './log/index.vue';
-import PHP from './php/index.vue';
-import router from '@/routers';
 import WebsiteStatus from '@/views/website/website/status/index.vue';
-import { GetWebsite } from '@/api/modules/website';
+import { getWebsite } from '@/api/modules/website';
 import { GetRuntime } from '@/api/modules/runtime';
+import { routerToNameWithParams } from '@/utils/router';
+import MainDiv from '@/components/main-div/index.vue';
 
 const props = defineProps({
     id: {
@@ -69,10 +61,10 @@ const props = defineProps({
     },
 });
 
-let id = ref(0);
-let index = ref('basic');
-let website = ref<any>({});
-let loading = ref(false);
+const id = ref(0);
+const index = ref('basic');
+const website = ref<any>({});
+const loading = ref(false);
 const configPHP = ref(false);
 
 watch(index, (curr, old) => {
@@ -82,19 +74,19 @@ watch(index, (curr, old) => {
 });
 
 const changeTab = (index: string) => {
-    router.push({ name: 'WebsiteConfig', params: { id: id.value, tab: index } });
+    routerToNameWithParams('WebsiteConfig', { id: id.value, tab: index });
 };
 
 onMounted(() => {
     index.value = props.tab;
     id.value = Number(props.id);
     loading.value = true;
-    GetWebsite(id.value)
+    getWebsite(id.value)
         .then(async (res) => {
             website.value = res.data;
             if (res.data.type === 'runtime') {
                 const runRes = await GetRuntime(res.data.runtimeID);
-                if (runRes.data.resource === 'appstore') {
+                if (runRes.data.type == 'php' && runRes.data.resource === 'appstore') {
                     configPHP.value = true;
                 }
             }

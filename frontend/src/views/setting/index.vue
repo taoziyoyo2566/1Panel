@@ -9,8 +9,8 @@
 
 <script lang="ts" setup>
 import i18n from '@/lang';
-import LayoutContent from '@/layout/layout-content.vue';
-import RouterButton from '@/components/router-button/index.vue';
+import { useGlobalStore } from '@/composables/useGlobalStore';
+const { isOffLine, isFxplay } = useGlobalStore();
 
 const buttons = [
     {
@@ -22,20 +22,33 @@ const buttons = [
         path: '/settings/safe',
     },
     {
-        label: i18n.global.t('setting.backupAccount'),
+        label: i18n.global.t('xpack.alert.alertNotice'),
+        path: '/settings/alert',
+    },
+    {
+        label: i18n.global.t('setting.backupAccount', 2),
         path: '/settings/backupaccount',
     },
     {
-        label: i18n.global.t('setting.monitor'),
-        path: '/settings/monitor',
+        label: i18n.global.t('setting.snapshot', 2),
+        path: '/settings/snapshot',
     },
     {
-        label: i18n.global.t('setting.snapshot'),
-        path: '/settings/snapshot',
+        label: i18n.global.t('setting.license'),
+        path: '/settings/license',
     },
     {
         label: i18n.global.t('setting.about'),
         path: '/settings/about',
     },
 ];
+
+onMounted(() => {
+    if (isOffLine.value) {
+        buttons.splice(5, 1);
+    }
+    if (isFxplay.value) {
+        buttons.splice(6, 1);
+    }
+});
 </script>

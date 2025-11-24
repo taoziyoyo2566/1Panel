@@ -76,7 +76,7 @@
                         </el-input>
                         <span class="input-help">{{ $t('database.readRndBufferSizeHelper') }}</span>
                     </el-form-item>
-                    <el-form-item v-if="mysqlVersion === '5.7.39'" label="query_cache_size" prop="query_cache_size">
+                    <el-form-item v-if="showCacheSize()" label="query_cache_size" prop="query_cache_size">
                         <el-input clearable v-model.number="mysqlVariables.query_cache_size">
                             <template #append>MB</template>
                         </el-input>
@@ -126,7 +126,6 @@ import { MsgSuccess } from '@/utils/message';
 
 const plan = ref();
 const confirmDialogRef = ref();
-const mysqlVersion = ref();
 
 const variableFormRef = ref<FormInstance>();
 const oldVariables = ref<Database.MysqlVariables>();
@@ -170,15 +169,21 @@ const variablesRules = reactive({
     long_query_time: [Rules.number, checkNumberRange(1, 102400)],
 });
 
-const mysqlName = ref();
+const currentDB = reactive({
+    type: '',
+    database: '',
+    version: '',
+});
 interface DialogProps {
-    mysqlName: string;
-    mysqlVersion: string;
+    type: string;
+    database: string;
+    version: string;
     variables: Database.MysqlVariables;
 }
 const acceptParams = (params: DialogProps): void => {
-    mysqlName.value = params.mysqlName;
-    mysqlVersion.value = params.mysqlVersion;
+    currentDB.type = params.type;
+    currentDB.database = params.database;
+    currentDB.version = params.version;
     mysqlVariables.key_buffer_size = Number(params.variables.key_buffer_size) / 1024 / 1024;
     mysqlVariables.query_cache_size = Number(params.variables.query_cache_size) / 1024 / 1024;
     mysqlVariables.tmp_table_size = Number(params.variables.tmp_table_size) / 1024 / 1024;
@@ -201,10 +206,12 @@ const emit = defineEmits(['loading']);
 const changePlan = async () => {
     for (const item of planOptions) {
         if (item.id === plan.value) {
+            variableFormRef.value.resetFields();
             mysqlVariables.key_buffer_size = item.data.key_buffer_size;
             mysqlVariables.query_cache_size = item.data.query_cache_size;
             mysqlVariables.tmp_table_size = item.data.tmp_table_size;
             mysqlVariables.innodb_buffer_pool_size = item.data.innodb_buffer_pool_size;
+            mysqlVariables.innodb_log_buffer_size = item.data.innodb_log_buffer_size;
 
             mysqlVariables.sort_buffer_size = item.data.sort_buffer_size;
             mysqlVariables.read_buffer_size = item.data.read_buffer_size;
@@ -234,7 +241,7 @@ const onSaveStart = async (formEl: FormInstance | undefined) => {
 };
 
 const onSaveVariables = async () => {
-    let param = [] as Array<Database.VariablesUpdate>;
+    let param = [] as Array<Database.VariablesUpdateHelper>;
     if (oldVariables.value?.key_buffer_size !== mysqlVariables.key_buffer_size) {
         param.push({ param: 'key_buffer_size', value: mysqlVariables.key_buffer_size * 1024 * 1024 });
     }
@@ -282,7 +289,12 @@ const onSaveVariables = async () => {
         param.push({ param: 'max_connections', value: mysqlVariables.max_connections });
     }
     emit('loading', true);
-    await updateMysqlVariables(param)
+    let params = {
+        type: currentDB.type,
+        database: currentDB.database,
+        variables: param,
+    };
+    await updateMysqlVariables(params)
         .then(() => {
             emit('loading', false);
             MsgSuccess(i18n.global.t('commons.msg.operationSuccess'));
@@ -292,6 +304,9 @@ const onSaveVariables = async () => {
         });
 };
 
+const showCacheSize = () => {
+    return currentDB.version?.startsWith('5.7');
+};
 defineExpose({
     acceptParams,
 });

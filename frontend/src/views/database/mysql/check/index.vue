@@ -1,51 +1,60 @@
 <template>
-    <el-dialog
-        v-model="open"
-        :title="$t('app.checkTitle')"
-        width="50%"
-        :close-on-click-modal="false"
-        :destroy-on-close="true"
-    >
+    <DialogPro v-model="open" :title="$t('app.checkTitle')" size="large">
         <el-row>
-            <el-alert
-                type="warning"
-                :description="$t('app.deleteHelper', [$t('app.database')])"
-                center
-                show-icon
-                :closable="false"
-            />
-            <el-col :span="12" :offset="6">
+            <el-col :span="20" :offset="2" v-if="open">
+                <el-alert
+                    type="error"
+                    :title="$t('app.deleteHelper', [$t('menu.database')])"
+                    center
+                    show-icon
+                    :closable="false"
+                />
                 <br />
-                <el-descriptions border :column="1">
-                    <el-descriptions-item>
+                <el-descriptions :column="1" border>
+                    <el-descriptions-item
+                        v-for="(item, key) in installData"
+                        :key="key"
+                        label-class-name="check-label"
+                        class-name="check-content"
+                        min-width="60px"
+                    >
                         <template #label>
-                            <a href="javascript:void(0);" @click="toApp()">{{ $t('app.app') }}</a>
+                            <a href="javascript:void(0);" class="check-label-a" @click="toPage(item.type)">
+                                {{ $t('menu.' + item.type) }}
+                            </a>
                         </template>
-                        {{ installData.join(',') }}
+                        <span class="resources">
+                            {{ item.name }}
+                        </span>
                     </el-descriptions-item>
                 </el-descriptions>
             </el-col>
         </el-row>
-    </el-dialog>
+    </DialogPro>
 </template>
 <script lang="ts" setup>
+import { Database } from '@/api/interface/database';
+import { routerToName } from '@/utils/router';
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-const router = useRouter();
 
-interface InstallRrops {
-    items: Array<string>;
+interface InstallProps {
+    items: Array<Database.DBResource>;
 }
 const installData = ref();
 let open = ref(false);
 
-const acceptParams = (props: InstallRrops) => {
+const acceptParams = (props: InstallProps) => {
     installData.value = props.items;
     open.value = true;
 };
 
-const toApp = () => {
-    router.push({ name: 'App' });
+const toPage = (key: string) => {
+    if (key === 'app') {
+        routerToName('App');
+    }
+    if (key === 'website') {
+        routerToName('Website');
+    }
 };
 
 defineExpose({

@@ -1,72 +1,81 @@
 <template>
-    <el-drawer :close-on-click-modal="false" v-model="open" size="50%" :before-close="handleClose">
-        <template #header>
-            <Header :header="$t('website.group')" :back="handleClose"></Header>
+    <DrawerPro v-model="open" :header="$t('commons.table.manageGroup')" @close="handleClose" size="large">
+        <template #content>
+            <ComplexTable :data="data" @search="search()">
+                <template #toolbar>
+                    <el-button type="primary" @click="openCreate">{{ $t('website.createGroup') }}</el-button>
+                </template>
+                <el-table-column :label="$t('commons.table.name')" prop="name">
+                    <template #default="{ row }">
+                        <div v-if="!row.edit">
+                            <span v-if="row.name === 'Default'">
+                                {{ $t('commons.table.default') }}
+                            </span>
+                            <span v-if="row.name !== 'Default'">{{ row.name }}</span>
+                            <el-tag v-if="row.isDefault" type="success" class="ml-2" size="small">
+                                ({{ $t('commons.table.default') }})
+                            </el-tag>
+
+                            <el-tag type="warning" size="small" class="ml-4" v-if="row.isDelete">
+                                {{ $t('app.takeDown') }}
+                            </el-tag>
+                        </div>
+
+                        <el-form @submit.prevent ref="groupForm" v-if="row.edit" :model="row">
+                            <el-form-item prop="name" v-if="row.edit" :rules="Rules.name">
+                                <div style="margin-top: 20px; width: 100%"><el-input v-model="row.name" /></div>
+                            </el-form-item>
+                        </el-form>
+                    </template>
+                </el-table-column>
+
+                <el-table-column :label="$t('commons.table.operate')">
+                    <template #default="{ row, $index }">
+                        <div>
+                            <el-button link v-if="row.edit" type="primary" @click="saveGroup(groupForm, row)">
+                                {{ $t('commons.button.save') }}
+                            </el-button>
+                            <el-button link v-if="!row.edit" type="primary" @click="editGroup($index)">
+                                {{ $t('commons.button.edit') }}
+                            </el-button>
+                            <el-button
+                                link
+                                v-if="!row.edit"
+                                :disabled="row.isDefault"
+                                type="primary"
+                                @click="removeGroup($index)"
+                            >
+                                {{ $t('commons.button.delete') }}
+                            </el-button>
+                            <el-button link v-if="row.edit" type="primary" @click="search()">
+                                {{ $t('commons.button.cancel') }}
+                            </el-button>
+                            <el-button
+                                link
+                                v-if="!hideDefaultButton && !row.edit && !row.isDefault && !row.isDelete"
+                                type="primary"
+                                @click="setDefault(row)"
+                            >
+                                {{ $t('website.setDefault') }}
+                            </el-button>
+                        </div>
+                    </template>
+                </el-table-column>
+            </ComplexTable>
         </template>
-
-        <ComplexTable :data="data" @search="search()">
-            <template #toolbar>
-                <el-button type="primary" @click="openCreate">{{ $t('website.createGroup') }}</el-button>
-            </template>
-            <el-table-column :label="$t('commons.table.name')" prop="name">
-                <template #default="{ row }">
-                    <div v-if="!row.edit">
-                        <span v-if="row.name === 'default'">
-                            {{ $t('website.default') }}
-                        </span>
-                        <span v-if="row.name !== 'default'">{{ row.name }}</span>
-                        <span v-if="row.isDefault">({{ $t('website.default') }})</span>
-                    </div>
-
-                    <el-form @submit.prevent ref="groupForm" v-if="row.edit" :model="row">
-                        <el-form-item prop="name" v-if="row.edit" :rules="Rules.name">
-                            <div style="margin-top: 20px; width: 100%"><el-input v-model="row.name" /></div>
-                        </el-form-item>
-                    </el-form>
-                </template>
-            </el-table-column>
-            <el-table-column :label="$t('commons.table.operate')">
-                <template #default="{ row, $index }">
-                    <div>
-                        <el-button link v-if="row.edit" type="primary" @click="saveGroup(groupForm, row)">
-                            {{ $t('commons.button.save') }}
-                        </el-button>
-                        <el-button link v-if="!row.edit" type="primary" @click="editGroup($index)">
-                            {{ $t('commons.button.edit') }}
-                        </el-button>
-                        <el-button
-                            link
-                            v-if="!row.edit"
-                            :disabled="row.isDefault"
-                            type="primary"
-                            @click="deleteGroup($index)"
-                        >
-                            {{ $t('commons.button.delete') }}
-                        </el-button>
-                        <el-button link v-if="row.edit" type="primary" @click="search()">
-                            {{ $t('commons.button.cancel') }}
-                        </el-button>
-                        <el-button link v-if="!row.edit && !row.isDefault" type="primary" @click="setDefault(row)">
-                            {{ $t('website.setDefault') }}
-                        </el-button>
-                    </div>
-                </template>
-            </el-table-column>
-        </ComplexTable>
-    </el-drawer>
+    </DrawerPro>
 </template>
 <script lang="ts" setup>
 import { ref } from 'vue';
 import i18n from '@/lang';
-import ComplexTable from '@/components/complex-table/index.vue';
-import { CreateGroup, DeleteGroup, GetGroupList, UpdateGroup } from '@/api/modules/group';
-import Header from '@/components/drawer-header/index.vue';
+import { createGroup, deleteGroup, getGroupList, updateGroup } from '@/api/modules/group';
 import { MsgSuccess } from '@/utils/message';
 import { Group } from '@/api/interface/group';
 import { Rules } from '@/global/form-rules';
 import { FormInstance } from 'element-plus';
 
 const open = ref(false);
+const hideDefaultButton = ref(false);
 const type = ref();
 const data = ref();
 const handleClose = () => {
@@ -76,10 +85,12 @@ const handleClose = () => {
 };
 interface DialogProps {
     type: string;
+    hideDefaultButton: boolean;
 }
 
 const groupForm = ref<FormInstance>();
 const acceptParams = (params: DialogProps): void => {
+    hideDefaultButton.value = params.hideDefaultButton;
     type.value = params.type;
     open.value = true;
     search();
@@ -87,17 +98,8 @@ const acceptParams = (params: DialogProps): void => {
 const emit = defineEmits<{ (e: 'search'): void }>();
 
 const search = () => {
-    data.value = [];
-    GetGroupList({ type: type.value }).then((res) => {
-        for (const d of res.data) {
-            const g = {
-                id: d.id,
-                name: d.name,
-                isDefault: d.isDefault,
-                edit: false,
-            };
-            data.value.push(g);
-        }
+    getGroupList(type.value).then((res) => {
+        data.value = res.data || [];
     });
 };
 
@@ -109,12 +111,12 @@ const saveGroup = async (formEl: FormInstance, group: Group.GroupInfo) => {
         }
         group.type = type.value;
         if (group.id == 0) {
-            CreateGroup(group).then(() => {
+            createGroup(group).then(() => {
                 MsgSuccess(i18n.global.t('commons.msg.createSuccess'));
                 search();
             });
         } else {
-            UpdateGroup(group).then(() => {
+            updateGroup(group).then(() => {
                 MsgSuccess(i18n.global.t('commons.msg.updateSuccess'));
                 search();
             });
@@ -125,7 +127,7 @@ const saveGroup = async (formEl: FormInstance, group: Group.GroupInfo) => {
 const setDefault = (group: Group.GroupInfo) => {
     group.isDefault = true;
     group.type = type.value;
-    UpdateGroup(group).then(() => {
+    updateGroup(group).then(() => {
         MsgSuccess(i18n.global.t('commons.msg.updateSuccess'));
         search();
     });
@@ -145,15 +147,16 @@ const openCreate = () => {
         name: '',
         isDefault: false,
         edit: true,
+        status: 'Enable',
     };
     data.value.unshift(g);
 };
 
-const deleteGroup = (index: number) => {
+const removeGroup = (index: number) => {
     const group = data.value[index];
 
     if (group.id > 0) {
-        DeleteGroup(group.id).then(() => {
+        deleteGroup(group.id).then(() => {
             data.value.splice(index, 1);
             MsgSuccess(i18n.global.t('commons.msg.deleteSuccess'));
         });

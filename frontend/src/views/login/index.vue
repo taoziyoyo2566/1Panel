@@ -1,36 +1,25 @@
 <template>
-    <div>
-        <div class="login-backgroud" v-if="statusCode == 1">
-            <div class="login-wrapper">
-                <div :class="screenWidth > 1110 ? 'left inline-block' : ''">
-                    <div class="login-title">
-                        <span>{{ $t('commons.login.title') }}</span>
-                    </div>
-                    <img src="@/assets/images/1panel-login.png" alt="" v-if="screenWidth > 1110" />
+    <div class="flex items-center justify-center min-h-screen relative bg-gray-100">
+        <div class="absolute inset-0 bg-cover bg-center bg-no-repeat" :style="backgroundStyle"></div>
+        <div
+            :style="{ opacity: backgroundOpacity, width: containerWidth, height: containerHeight }"
+            class="bg-white shadow-lg relative z-10 border border-gray-200 flex overflow-hidden"
+            id="login-container"
+        >
+            <div class="grid grid-cols-1 md:grid-cols-2 items-stretch w-full">
+                <div v-if="showLogo" class="flex justify-center" :style="{ height: containerHeight }">
+                    <img
+                        v-show="imgLoaded"
+                        :src="loadImage('loginImage')"
+                        class="max-w-full max-h-full object-cover bg-cover bg-center"
+                        alt="1panel"
+                        @load="onImgLoad"
+                        @error="onImgError"
+                    />
                 </div>
-                <div :class="screenWidth > 1110 ? 'right inline-block' : ''">
-                    <div class="login-container">
-                        <LoginForm ref="loginRef"></LoginForm>
-                    </div>
+                <div :class="loginFormClass">
+                    <LoginForm ref="loginRef"></LoginForm>
                 </div>
-            </div>
-        </div>
-        <div style="margin-left: 50px" v-if="statusCode == -1">
-            <h1>{{ $t('commons.login.safeEntrance') }}</h1>
-            <div style="line-height: 30px">
-                <span style="font-weight: 500">{{ $t('commons.login.reason') }}</span>
-                <span>
-                    {{ $t('commons.login.reasonHelper') }}
-                </span>
-            </div>
-            <div style="line-height: 30px">
-                <span style="font-weight: 500">{{ $t('commons.login.solution') }}</span>
-                <span>{{ $t('commons.login.solutionHelper') }}</span>
-            </div>
-            <div style="line-height: 30px">
-                <span style="color: red">
-                    {{ $t('commons.login.warnning') }}
-                </span>
             </div>
         </div>
     </div>
@@ -39,103 +28,107 @@
 <script setup lang="ts" name="login">
 import LoginForm from './components/login-form.vue';
 import { ref, onMounted } from 'vue';
+import { GlobalStore } from '@/store';
+import { preloadImage } from '@/utils/util';
 
-const statusCode = ref<number>(0);
-const screenWidth = ref(null);
+const globalStore = GlobalStore();
+const backgroundOpacity = ref(1);
+const defaultLoginImage = new URL('@/assets/images/1panel-login.jpg', import.meta.url).href;
+const defaultLoginBgImage = new URL('@/assets/images/1panel-login-bg.jpg', import.meta.url).href;
+const loadedLoginImage = ref<string | null>(null);
+const loadedBackgroundImage = ref<string | null>(null);
+const backgroundStyle = ref<{ backgroundImage?: string; backgroundColor?: string }>({});
+const imgLoaded = ref(false);
+
+function onImgLoad() {
+    imgLoaded.value = true;
+}
+const mySafetyCode = defineProps({
+    code: {
+        type: String,
+        default: '',
+    },
+});
 
 const getStatus = async () => {
-    statusCode.value = 1;
+    let code = mySafetyCode.code;
+    if (code != '') {
+        globalStore.entrance = code;
+    }
 };
 
-onMounted(() => {
-    getStatus();
-    screenWidth.value = document.body.clientWidth;
-    window.onresize = () => {
-        return (() => {
-            screenWidth.value = document.body.clientWidth;
-        })();
+const loadImage = (name: string) => {
+    const { loginImage, loginBackground, loginBgType } = globalStore.themeConfig;
+    if (name === 'loginImage') {
+        return loginImage === 'loginImage' ? loadedLoginImage.value : defaultLoginImage;
+    }
+    if (name === 'loginBackground') {
+        if (loginBgType === 'image') {
+            return loginBackground === 'loginBackground' ? loadedBackgroundImage.value : defaultLoginBgImage;
+        }
+        if (loginBgType === 'color') {
+            return loginBackground;
+        }
+        return defaultLoginBgImage;
+    }
+    return '';
+};
+
+const onImgError = (event: any) => {
+    event.target.src = defaultLoginImage;
+    imgLoaded.value = true;
+};
+
+onMounted(async () => {
+    await getStatus();
+    const loginImageUrl = `/api/v2/images/loginImage?t=${Date.now()}`;
+    const backgroundImageUrl = `/api/v2/images/loginBackground?t=${Date.now()}`;
+    loadedLoginImage.value = await preloadImage(loginImageUrl);
+    loadedBackgroundImage.value = await preloadImage(backgroundImageUrl);
+    if (globalStore.themeConfig.loginBgType === 'color') {
+        backgroundStyle.value = {
+            backgroundColor: globalStore.themeConfig.loginBackground,
+        };
+    } else {
+        const img = new Image();
+        const url = loadImage('loginBackground');
+        img.onload = () => {
+            backgroundStyle.value = {
+                backgroundImage: `url(${url})`,
+            };
+        };
+        img.onerror = () => {
+            backgroundStyle.value = {
+                backgroundImage: `url(${defaultLoginBgImage})`, // 你定义的默认图
+            };
+        };
+        img.src = url;
+    }
+});
+
+const FIXED_WIDTH = 1000;
+const FIXED_HEIGHT = 415;
+const useWindowSize = () => {
+    const width = ref(window.innerWidth);
+    const height = ref(window.innerHeight);
+
+    const updateSize = () => {
+        width.value = window.innerWidth;
+        height.value = window.innerHeight;
     };
+
+    onMounted(() => window.addEventListener('resize', updateSize));
+    onUnmounted(() => window.removeEventListener('resize', updateSize));
+
+    return { width, height };
+};
+const { width } = useWindowSize();
+const showLogo = computed(() => width.value >= FIXED_WIDTH);
+const containerWidth = computed(() => `${FIXED_WIDTH}px`);
+const containerHeight = computed(() => `${FIXED_HEIGHT}px`);
+const loginFormClass = computed(() => {
+    return showLogo.value
+        ? 'hidden md:flex items-center justify-center p-4'
+        : 'flex items-center justify-center p-4 w-full';
 });
 </script>
-
-<style scoped lang="scss">
-@mixin login-center {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.login-backgroud {
-    height: 100vh;
-    background: url(@/assets/images/1panel-login-bg.png) no-repeat,
-        radial-gradient(153.25% 257.2% at 118.99% 181.67%, rgba(50, 132, 255, 0.2) 0%, rgba(82, 120, 255, 0) 100%)
-            /* warning: gradient uses a rotation that is not supported by CSS and may not behave as expected */,
-        radial-gradient(123.54% 204.83% at 25.87% 195.17%, rgba(111, 76, 253, 0.15) 0%, rgba(122, 76, 253, 0) 78.85%)
-            /* warning: gradient uses a rotation that is not supported by CSS and may not behave as expected */,
-        linear-gradient(0deg, rgba(0, 94, 235, 0.03), rgba(0, 94, 235, 0.03)),
-        radial-gradient(109.58% 109.58% at 31.53% -36.58%, rgba(0, 94, 235, 0.3) 0%, rgba(0, 94, 235, 0) 100%)
-            /* warning: gradient uses a rotation that is not supported by CSS and may not behave as expected */,
-        rgba(0, 57, 142, 0.05);
-
-    .login-wrapper {
-        padding-top: 8%;
-        width: 80%;
-        margin: 0 auto;
-        // @media only screen and (max-width: 1440px) {
-        //     width: 100%;
-        //     padding-top: 6%;
-        // }
-        .left {
-            vertical-align: middle;
-            text-align: right;
-            width: 60%;
-            img {
-                object-fit: contain;
-                width: 100%;
-                @media only screen and (min-width: 1440px) {
-                    width: 85%;
-                }
-            }
-        }
-        .right {
-            vertical-align: middle;
-            width: 40%;
-        }
-    }
-
-    .login-title {
-        text-align: right;
-        margin-right: 10%;
-        span:first-child {
-            color: $primary-color;
-            font-size: 40px;
-            font-family: pingFangSC-Regular;
-            font-weight: 600;
-            // @media only screen and (max-width: 1440px) {
-            //     margin-left: 0;
-            // }
-        }
-        @media only screen and (max-width: 1110px) {
-            margin-bottom: 20px;
-            font-size: 35px;
-            text-align: center;
-            margin-right: 0;
-        }
-    }
-    .login-container {
-        margin-top: 40px;
-        padding: 40px 0;
-        width: 390px;
-        box-sizing: border-box;
-        background-color: rgba(255, 255, 255, 0.55);
-        border-radius: 4px;
-        box-shadow: 2px 4px 22px rgba(0, 94, 235, 0.2);
-        @media only screen and (max-width: 1440px) {
-            margin-top: 60px;
-        }
-        @media only screen and (max-width: 1110px) {
-            margin: 60px auto 0;
-        }
-    }
-}
-</style>

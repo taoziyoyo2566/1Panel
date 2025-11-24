@@ -1,52 +1,45 @@
 <template>
-    <el-drawer
-        v-model="open"
-        :destroy-on-close="true"
-        :close-on-click-modal="false"
-        :before-close="handleClose"
-        size="50%"
-    >
-        <template #header>
-            <DrawerHeader :header="title" :back="handleClose" />
-        </template>
-        <el-row>
-            <el-col :span="22" :offset="1">
-                <el-form
-                    ref="fileForm"
-                    label-position="top"
-                    :model="form"
-                    label-width="100px"
-                    :rules="rules"
-                    v-loading="loading"
-                >
-                    <el-form-item :label="$t('file.compressType')" prop="type">
-                        <el-select v-model="form.type">
-                            <el-option v-for="item in options" :key="item" :label="item" :value="item" />
-                        </el-select>
-                    </el-form-item>
-                    <el-form-item :label="$t('file.name')" prop="name">
-                        <el-input v-model="form.name">
-                            <template #append>{{ extension }}</template>
-                        </el-input>
-                    </el-form-item>
-                    <el-form-item :label="$t('file.compressDst')" prop="dst">
-                        <el-input v-model="form.dst">
-                            <template #prepend><FileList :path="form.dst" @choose="getLinkPath"></FileList></template>
-                        </el-input>
-                    </el-form-item>
-                    <el-form-item>
-                        <el-checkbox v-model="form.replace" :label="$t('file.replace')"></el-checkbox>
-                    </el-form-item>
-                </el-form>
-            </el-col>
-        </el-row>
+    <DrawerPro v-model="open" :header="title" @close="handleClose" size="large">
+        <el-form
+            ref="fileForm"
+            label-position="top"
+            :model="form"
+            label-width="100px"
+            :rules="rules"
+            v-loading="loading"
+        >
+            <el-form-item :label="$t('file.compressType')" prop="type">
+                <el-select v-model="form.type">
+                    <el-option v-for="item in options" :key="item" :label="item" :value="item" />
+                </el-select>
+            </el-form-item>
+            <el-form-item :label="$t('commons.table.name')" prop="name">
+                <el-input v-model="form.name">
+                    <template #append>{{ extension }}</template>
+                </el-input>
+            </el-form-item>
+            <el-form-item :label="$t('file.compressDst')" prop="dst">
+                <el-input v-model="form.dst">
+                    <template #prepend>
+                        <el-button icon="Folder" @click="fileRef.acceptParams({ dir: true, path: form.dst })" />
+                    </template>
+                </el-input>
+            </el-form-item>
+            <el-form-item :label="$t('setting.compressPassword')" prop="secret" v-if="form.type === 'tar.gz'">
+                <el-input v-model="form.secret"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-checkbox v-model="form.replace" :label="$t('file.replace')"></el-checkbox>
+            </el-form-item>
+        </el-form>
         <template #footer>
             <span class="dialog-footer">
                 <el-button @click="handleClose">{{ $t('commons.button.cancel') }}</el-button>
                 <el-button type="primary" @click="submit(fileForm)">{{ $t('commons.button.confirm') }}</el-button>
             </span>
         </template>
-    </el-drawer>
+    </DrawerPro>
+    <FileList ref="fileRef" @choose="getLinkPath" />
 </template>
 
 <script setup lang="ts">
@@ -55,10 +48,9 @@ import { computed, reactive, ref } from 'vue';
 import { File } from '@/api/interface/file';
 import { FormInstance, FormRules } from 'element-plus';
 import { Rules } from '@/global/form-rules';
-import { CompressExtention, CompressType } from '@/enums/files';
-import { CompressFile } from '@/api/modules/files';
+import { CompressExtension, CompressType } from '@/enums/files';
+import { compressFile } from '@/api/modules/files';
 import FileList from '@/components/file-list/index.vue';
-import DrawerHeader from '@/components/drawer-header/index.vue';
 import { MsgSuccess } from '@/utils/message';
 
 interface CompressProps {
@@ -75,17 +67,18 @@ const rules = reactive<FormRules>({
 });
 
 const fileForm = ref<FormInstance>();
-let loading = ref(false);
-let form = ref<File.FileCompress>({ files: [], type: 'zip', dst: '', name: '', replace: false });
-let options = ref<string[]>([]);
-let open = ref(false);
-let title = ref('');
-let operate = ref('compress');
+const loading = ref(false);
+const form = ref<File.FileCompress>({ files: [], type: 'zip', dst: '', name: '', replace: false, secret: '' });
+const options = ref<string[]>([]);
+const open = ref(false);
+const title = ref('');
+const operate = ref('compress');
+const fileRef = ref();
 
 const em = defineEmits(['close']);
 
 const extension = computed(() => {
-    return CompressExtention[form.value.type];
+    return CompressExtension[form.value.type];
 });
 
 const handleClose = () => {
@@ -110,7 +103,7 @@ const submit = async (formEl: FormInstance | undefined) => {
         Object.assign(addItem, form.value);
         addItem['name'] = form.value.name + extension.value;
         loading.value = true;
-        CompressFile(addItem as File.FileCompress)
+        compressFile(addItem as File.FileCompress)
             .then(() => {
                 MsgSuccess(i18n.global.t('file.compressSuccess'));
                 handleClose();

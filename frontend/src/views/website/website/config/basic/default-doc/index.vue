@@ -1,13 +1,9 @@
 <template>
     <el-row :gutter="20" v-loading="loading">
-        <el-col :span="8" :offset="1">
+        <el-col :xs="24" :sm="18" :md="8" :lg="8" :xl="8">
             <el-form @submit.prevent ref="defaultForm" label-position="top" :model="defaultModel" :rules="rules">
                 <el-form-item :label="$t('website.defaultDoc')" prop="index">
-                    <el-input
-                        v-model="defaultModel.index"
-                        type="textarea"
-                        :autosize="{ minRows: 8, maxRows: 20 }"
-                    ></el-input>
+                    <el-input v-model="defaultModel.index" type="textarea" :rows="8"></el-input>
                 </el-form-item>
             </el-form>
             <el-button type="primary" @click="submit(defaultForm)" :disabled="loading">
@@ -19,7 +15,7 @@
 
 <script lang="ts" setup>
 import { Website } from '@/api/interface/website';
-import { GetNginxConfig, UpdateNginxConfig } from '@/api/modules/website';
+import { getNginxConfig, updateNginxConfig } from '@/api/modules/website';
 import { Rules } from '@/global/form-rules';
 import { FormInstance } from 'element-plus';
 import { computed, onMounted, ref } from 'vue';
@@ -59,7 +55,7 @@ const submit = async (formEl: FormInstance | undefined) => {
         }
         req.value.params = defaultModel.value;
         loading.value = true;
-        UpdateNginxConfig(req.value)
+        updateNginxConfig(req.value)
             .then(() => {
                 MsgSuccess(i18n.global.t('commons.msg.updateSuccess'));
                 search(req.value);
@@ -72,7 +68,7 @@ const submit = async (formEl: FormInstance | undefined) => {
 
 const search = (req: Website.NginxConfigReq) => {
     loading.value = true;
-    GetNginxConfig(req)
+    getNginxConfig(req)
         .then((res) => {
             if (res.data && res.data.params.length > 0) {
                 const params = res.data.params[0].params;

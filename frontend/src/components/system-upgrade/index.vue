@@ -1,80 +1,127 @@
 <template>
     <div>
-        <span class="version">{{ version }}</span>
-        <el-badge is-dot class="item" v-if="version !== 'Waiting' && globalStore.hasNewVersion">
-            <el-button style="margin-top: -8px" type="primary" link @click="onLoadUpgradeInfo">
-                {{ $t('setting.upgradeCheck') }}
-            </el-button>
-        </el-badge>
-        <el-button
-            v-if="version !== 'Waiting' && !globalStore.hasNewVersion"
-            style="margin-top: -2px"
-            type="primary"
-            link
-            @click="onLoadUpgradeInfo"
-        >
-            {{ $t('setting.upgradeCheck') }}
-        </el-button>
-        <el-tag v-if="version === 'Waiting'" round style="margin-left: 10px">{{ $t('setting.upgrading') }}</el-tag>
-    </div>
-
-    <el-drawer :close-on-click-modal="false" :key="refresh" v-model="drawerVisiable" size="50%" append-to-body>
-        <template #header>
-            <DrawerHeader :header="$t('setting.upgrade')" :back="handleClose" />
-        </template>
-        <div class="panel-MdEditor">
-            <el-alert :closable="false">
-                {{ $t('setting.versionHelper') }}
-                <li>{{ $t('setting.versionHelper1') }}</li>
-                <li>{{ $t('setting.versionHelper2') }}</li>
-            </el-alert>
-            <div class="default-theme">
-                <h2 class="inline-block">{{ $t('app.version') }}</h2>
+        <div class="flex w-full flex-col gap-2 md:flex-row items-center">
+            <div class="flex flex-wrap gap-y-2 items-center">
+                <span v-if="props.footer">
+                    <el-link type="primary" underline="never" @click="toForum" v-if="!isFxplay">
+                        <span class="font-normal">{{ $t('setting.forum') }}</span>
+                    </el-link>
+                    <el-divider direction="vertical" v-if="!isFxplay" />
+                    <el-link type="primary" underline="never" @click="toDoc">
+                        <span class="font-normal">{{ $t('setting.doc2') }}</span>
+                    </el-link>
+                    <el-divider direction="vertical" v-if="!isFxplay" />
+                    <el-link type="primary" underline="never" @click="toGithub" v-if="!isFxplay">
+                        <span class="font-normal">{{ $t('setting.project') }}</span>
+                    </el-link>
+                    <el-divider direction="vertical" />
+                </span>
+                <div class="flex flex-wrap items-center">
+                    <el-link underline="never" type="primary" @click="toLxware">
+                        <span v-if="isMasterPro">
+                            {{ $t('license.pro') }}
+                        </span>
+                        <span v-else-if="isOffLine">
+                            {{ $t('license.offLine') }}
+                        </span>
+                        <span v-else>
+                            {{ $t('license.community') }}
+                        </span>
+                    </el-link>
+                    <el-link underline="never" class="version" type="primary" @click="getVersionLog()">
+                        {{ version }}
+                    </el-link>
+                    <el-badge is-dot class="-mt-0.5" :hidden="version === 'Waiting' || !globalStore.hasNewVersion">
+                        <el-link
+                            class="ml-2"
+                            underline="never"
+                            type="primary"
+                            @click="onLoadUpgradeInfo"
+                            v-if="!globalStore.isOffLine"
+                        >
+                            {{ $t('commons.button.update') }}
+                        </el-link>
+                    </el-badge>
+                    <el-tag v-if="version === 'Waiting'" round class="ml-2.5">{{ $t('setting.upgrading') }}</el-tag>
+                </div>
             </div>
-            <el-radio-group class="inline-block tag" v-model="upgradeVersion" @change="changeOption">
-                <el-radio v-if="upgradeInfo.newVersion" :label="upgradeInfo.newVersion">
-                    {{ upgradeInfo.newVersion }} {{ $t('setting.newVersion') }}
-                </el-radio>
-                <el-radio :label="upgradeInfo.latestVersion">
-                    {{ upgradeInfo.latestVersion }} {{ $t('setting.latestVersion') }}
-                </el-radio>
-            </el-radio-group>
-            <MdEditor v-model="upgradeInfo.releaseNote" previewOnly />
         </div>
-        <template #footer>
-            <span class="dialog-footer">
-                <el-button @click="drawerVisiable = false">{{ $t('commons.button.cancel') }}</el-button>
-                <el-button type="primary" @click="onUpgrade">{{ $t('setting.upgradeNow') }}</el-button>
-            </span>
-        </template>
-    </el-drawer>
+
+        <Upgrade ref="upgradeRef" @search="search" />
+        <Releases ref="releasesRef" />
+    </div>
 </template>
+
 <script setup lang="ts">
-import { getSettingInfo, loadReleaseNotes, loadUpgradeInfo, upgrade } from '@/api/modules/setting';
-import MdEditor from 'md-editor-v3';
+import { getSettingInfo, loadUpgradeInfo } from '@/api/modules/setting';
+import Upgrade from '@/components/system-upgrade/upgrade/index.vue';
+import Releases from '@/components/system-upgrade/releases/index.vue';
 import i18n from '@/lang';
-import 'md-editor-v3/lib/style.css';
 import { MsgSuccess } from '@/utils/message';
 import { onMounted, ref } from 'vue';
 import { GlobalStore } from '@/store';
-import { ElMessageBox } from 'element-plus';
+import { storeToRefs } from 'pinia';
+
 const globalStore = GlobalStore();
+const { docsUrl, isOffLine, isFxplay } = storeToRefs(globalStore);
+const upgradeRef = ref();
+const releasesRef = ref();
+const isMasterPro = computed(() => {
+    return globalStore.isMasterPro();
+});
 
-const version = ref();
-let loading = ref(false);
-const drawerVisiable = ref(false);
+const version = ref<string>('');
+const loading = ref(false);
 const upgradeInfo = ref();
-const refresh = ref();
-
 const upgradeVersion = ref();
+const props = defineProps({
+    footer: {
+        type: Boolean,
+        default: false,
+    },
+});
 
 const search = async () => {
     const res = await getSettingInfo();
     version.value = res.data.systemVersion;
 };
 
-const handleClose = () => {
-    drawerVisiable.value = false;
+const getVersionLog = () => {
+    if (isOffLine.value) {
+        return;
+    }
+    releasesRef.value.acceptParams();
+};
+
+const toLxware = () => {
+    if (isOffLine.value) {
+        to1Panel();
+        return;
+    }
+    if (!globalStore.isIntl) {
+        window.open('https://www.lxware.cn/1panel' + '', '_blank', 'noopener,noreferrer');
+    } else {
+        window.open('https://1panel.hk/pricing' + '', '_blank', 'noopener,noreferrer');
+    }
+};
+
+const to1Panel = () => {
+    window.open('https://1panel.cn', '_blank', 'noopener,noreferrer');
+};
+
+const toDoc = () => {
+    window.open(docsUrl.value, '_blank', 'noopener,noreferrer');
+};
+
+const toForum = () => {
+    let url = globalStore.isIntl
+        ? 'https://github.com/1Panel-dev/1Panel/discussions'
+        : 'https://bbs.fit2cloud.com/c/1p/7';
+    window.open(url, '_blank');
+};
+
+const toGithub = () => {
+    window.open('https://github.com/1Panel-dev/1Panel', '_blank', 'noopener,noreferrer');
 };
 
 const onLoadUpgradeInfo = async () => {
@@ -82,36 +129,24 @@ const onLoadUpgradeInfo = async () => {
     await loadUpgradeInfo()
         .then((res) => {
             loading.value = false;
-            if (!res.data) {
+            if (res.data.testVersion || res.data.newVersion || res.data.latestVersion) {
+                upgradeInfo.value = res.data;
+                if (upgradeInfo.value.latestVersion) {
+                    upgradeVersion.value = upgradeInfo.value.latestVersion;
+                } else if (upgradeInfo.value.testVersion) {
+                    upgradeVersion.value = upgradeInfo.value.testVersion;
+                } else if (upgradeInfo.value.newVersion) {
+                    upgradeVersion.value = upgradeInfo.value.newVersion;
+                }
+                upgradeRef.value.acceptParams({ upgradeInfo: upgradeInfo.value, upgradeVersion: upgradeVersion.value });
+            } else {
                 MsgSuccess(i18n.global.t('setting.noUpgrade'));
                 return;
             }
-            upgradeInfo.value = res.data;
-            upgradeVersion.value = upgradeInfo.value.newVersion || upgradeInfo.value.latestVersion;
-            drawerVisiable.value = true;
         })
         .catch(() => {
             loading.value = false;
         });
-};
-
-const changeOption = async () => {
-    const res = await loadReleaseNotes(upgradeVersion.value);
-    upgradeInfo.value.releaseNote = res.data;
-};
-
-const onUpgrade = async () => {
-    ElMessageBox.confirm(i18n.global.t('setting.upgradeHelper', i18n.global.t('setting.upgrade')), {
-        confirmButtonText: i18n.global.t('commons.button.confirm'),
-        cancelButtonText: i18n.global.t('commons.button.cancel'),
-        type: 'info',
-    }).then(async () => {
-        globalStore.isLoading = true;
-        await upgrade(upgradeVersion.value);
-        drawerVisiable.value = false;
-        MsgSuccess(i18n.global.t('commons.msg.operationSuccess'));
-        search();
-    });
 };
 
 onMounted(() => {
@@ -120,26 +155,19 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+.line-height {
+    line-height: 25px;
+}
+:deep(.el-link__inner) {
+    font-weight: 400;
+}
 .version {
+    margin-left: 8px;
     font-size: 14px;
-    color: #858585;
+    color: var(--panel-color-primary-light-4);
     text-decoration: none;
     letter-spacing: 0.5px;
-}
-.panel-MdEditor {
-    height: calc(100vh - 330px);
-    margin-left: 70px;
-    .tag {
-        margin-top: -6px;
-        vertical-align: middle;
-    }
-    :deep(.md-editor-preview) {
-        font-size: 14px;
-    }
-    :deep(.default-theme h2) {
-        margin: 13px 0;
-        padding: 0;
-        font-size: 16px;
-    }
+    cursor: pointer;
+    font-family: auto;
 }
 </style>

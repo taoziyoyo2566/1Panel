@@ -1,82 +1,95 @@
 <template>
-    <el-drawer
-        v-model="terminalVisiable"
+    <DrawerPro
+        v-model="terminalVisible"
+        :header="$t('menu.terminal')"
         @close="handleClose"
-        :destroy-on-close="true"
-        :close-on-click-modal="false"
-        size="50%"
+        :resource="title"
+        :autoClose="!terminalOpen"
+        size="large"
+        :fullScreen="true"
     >
-        <template #header>
-            <DrawerHeader :header="$t('container.containerTerminal')" :back="handleClose" />
-        </template>
-        <el-form ref="formRef" :model="form" label-position="top">
-            <el-form-item :label="$t('container.user')" prop="user">
-                <el-input placeholder="root" clearable v-model="form.user" />
-            </el-form-item>
-            <el-form-item
-                v-if="form.isCustom"
-                :label="$t('container.command')"
-                prop="command"
-                :rules="Rules.requiredInput"
-            >
-                <el-checkbox style="width: 100px" border v-model="form.isCustom" @change="onChangeCommand">
-                    {{ $t('container.custom') }}
-                </el-checkbox>
-                <el-input style="width: calc(100% - 100px)" clearable v-model="form.command" />
-            </el-form-item>
-            <el-form-item
-                v-if="!form.isCustom"
-                :label="$t('container.command')"
-                prop="command"
-                :rules="Rules.requiredSelect"
-            >
-                <el-checkbox style="width: 100px" border v-model="form.isCustom" @change="onChangeCommand">
-                    {{ $t('container.custom') }}
-                </el-checkbox>
-                <el-select style="width: calc(100% - 100px)" filterable clearable v-model="form.command">
-                    <el-option value="/bin/ash" label="/bin/ash" />
-                    <el-option value="/bin/bash" label="/bin/bash" />
-                    <el-option value="/bin/sh" label="/bin/sh" />
-                </el-select>
-            </el-form-item>
+        <template #content>
+            <el-form ref="formRef" :model="form" label-position="top">
+                <el-form-item :label="$t('menu.container')" prop="containerID" v-if="form.containerIDList.length > 1">
+                    <el-select placeholder="container" clearable v-model="form.containerID">
+                        <el-option v-for="item in form.containerIDList" :key="item" :label="item" :value="item" />
+                    </el-select>
+                </el-form-item>
+                <el-form-item :label="$t('commons.table.user')" prop="user">
+                    <el-input placeholder="root" clearable v-model="form.user" />
+                </el-form-item>
+                <el-form-item
+                    v-if="form.isCustom"
+                    :label="$t('container.command')"
+                    prop="command"
+                    :rules="Rules.requiredInput"
+                >
+                    <el-checkbox class="p-w-100" border v-model="form.isCustom" @change="onChangeCommand">
+                        {{ $t('container.custom') }}
+                    </el-checkbox>
+                    <el-input style="width: calc(100% - 100px)" clearable v-model="form.command" />
+                </el-form-item>
+                <el-form-item
+                    v-if="!form.isCustom"
+                    :label="$t('container.command')"
+                    prop="command"
+                    :rules="Rules.requiredSelect"
+                >
+                    <el-checkbox class="p-w-100" border v-model="form.isCustom" @change="onChangeCommand">
+                        {{ $t('container.custom') }}
+                    </el-checkbox>
+                    <el-select style="width: calc(100% - 100px)" filterable clearable v-model="form.command">
+                        <el-option value="/bin/ash" label="/bin/ash" />
+                        <el-option value="/bin/bash" label="/bin/bash" />
+                        <el-option value="/bin/sh" label="/bin/sh" />
+                    </el-select>
+                </el-form-item>
 
-            <el-button v-if="!terminalOpen" @click="initTerm(formRef)">
-                {{ $t('commons.button.conn') }}
-            </el-button>
-            <el-button v-else @click="handleClose()">{{ $t('commons.button.disconn') }}</el-button>
-            <Terminal style="height: calc(100vh - 302px)" ref="terminalRef"></Terminal>
-        </el-form>
-    </el-drawer>
+                <el-button v-if="!terminalOpen" @click="initTerm(formRef)">
+                    {{ $t('commons.button.conn') }}
+                </el-button>
+                <el-button v-else @click="onClose()">{{ $t('commons.button.disConn') }}</el-button>
+                <Terminal
+                    style="height: calc(100vh - 312px); margin-top: 18px"
+                    ref="terminalRef"
+                    v-if="terminalOpen"
+                ></Terminal>
+            </el-form>
+        </template>
+    </DrawerPro>
 </template>
 
 <script lang="ts" setup>
-import { reactive, ref } from 'vue';
+import { reactive, ref, nextTick } from 'vue';
 import { ElForm, FormInstance } from 'element-plus';
 import { Rules } from '@/global/form-rules';
 import Terminal from '@/components/terminal/index.vue';
-import DrawerHeader from '@/components/drawer-header/index.vue';
 
-const terminalVisiable = ref(false);
+const title = ref();
+const terminalVisible = ref(false);
 const terminalOpen = ref(false);
 const form = reactive({
     isCustom: false,
     command: '',
     user: '',
     containerID: '',
+    containerIDList: [],
 });
-type FormInstance = InstanceType<typeof ElForm>;
-const formRef = ref<FormInstance>();
+const formRef = ref();
 const terminalRef = ref<InstanceType<typeof Terminal> | null>(null);
 
 interface DialogProps {
     containerID: string;
+    title: string;
 }
 const acceptParams = async (params: DialogProps): Promise<void> => {
-    terminalVisiable.value = true;
-    form.containerID = params.containerID;
+    terminalVisible.value = true;
+    form.containerIDList = params.containerID.split(',');
+    form.containerID = form.containerIDList[0];
+    title.value = params.title;
     form.isCustom = false;
     form.user = '';
-    form.command = '/bin/bash';
+    form.command = '/bin/sh';
     terminalOpen.value = false;
 };
 
@@ -89,18 +102,24 @@ const initTerm = (formEl: FormInstance | undefined) => {
     formEl.validate(async (valid) => {
         if (!valid) return;
         terminalOpen.value = true;
+        await nextTick();
         terminalRef.value!.acceptParams({
-            endpoint: '/api/v1/containers/exec',
-            args: `containerid=${form.containerID}&user=${form.user}&command=${form.command}`,
+            endpoint: '/api/v2/containers/exec',
+            args: `source=container&containerid=${form.containerID}&user=${form.user}&command=${form.command}`,
             error: '',
+            initCmd: '',
         });
     });
 };
 
-function handleClose() {
+const onClose = () => {
     terminalRef.value?.onClose();
-    terminalVisiable.value = false;
     terminalOpen.value = false;
+};
+
+function handleClose() {
+    onClose();
+    terminalVisible.value = false;
 }
 
 defineExpose({

@@ -2,37 +2,25 @@ import { Login } from '@/api/interface/auth';
 import http from '@/api';
 
 export const loginApi = (params: Login.ReqLoginForm) => {
-    return http.post<Login.ResLogin>(`/auth/login`, params);
+    return http.post<Login.ResLogin>(`/core/auth/login`, params);
 };
 
 export const mfaLoginApi = (params: Login.MFALoginForm) => {
-    return http.post<Login.ResLogin>(`/auth/mfalogin`, params);
+    return http.post<Login.ResLogin>(`/core/auth/mfalogin`, params);
 };
 
 export const getCaptcha = () => {
-    return http.get<Login.ResCaptcha>(`/auth/captcha`);
+    return http.get<Login.ResCaptcha>(`/core/auth/captcha`);
 };
 
 export const logOutApi = () => {
-    return http.post<any>(`/auth/logout`);
+    return http.post<any>(`/core/auth/logout`);
 };
 
-export const entrance = (code: string) => {
-    return http.get<any>(`/${code}`);
+export const getLoginSetting = () => {
+    return http.get<Login.LoginSetting>('/core/auth/setting');
 };
 
-export const loginStatus = () => {
-    return http.get<any>('/info');
-};
-
-export const checkIsFirst = () => {
-    return http.get<boolean>('/auth/status');
-};
-
-export const initUser = (params: Login.InitUser) => {
-    return http.post(`/auth/init`, params);
-};
-
-export const checkIsDemo = () => {
-    return http.get<boolean>('/auth/demo');
+export const getWelcomePage = () => {
+    return http.get<string>('/core/auth/welcome');
 };

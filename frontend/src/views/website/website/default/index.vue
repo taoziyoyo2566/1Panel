@@ -1,31 +1,23 @@
 <template>
-    <el-drawer :close-on-click-modal="false" v-model="open" size="40%">
-        <template #header>
-            <DrawerHeader :header="$t('website.defaultServer')" :back="handleClose"></DrawerHeader>
-        </template>
-        <el-row v-loading="loading">
-            <el-col :span="22" :offset="1">
-                <el-form @submit.prevent label-position="top">
-                    <el-form-item :label="$t('website.defaultServer')">
-                        <el-select v-model="defaultId" style="width: 100%">
-                            <el-option :value="0" :key="-1" :label="$t('website.noDefaulServer')"></el-option>
-                            <el-option
-                                v-for="(website, key) in websites"
-                                :key="key"
-                                :value="website.id"
-                                :label="website.primaryDomain"
-                            ></el-option>
-                        </el-select>
-                    </el-form-item>
-                </el-form>
-                <el-alert :closable="false">
-                    <template #default>
-                        <span style="white-space: pre-line">{{ $t('website.defaultServerHelper') }}</span>
-                    </template>
-                </el-alert>
-            </el-col>
-        </el-row>
-
+    <DrawerPro v-model="open" :header="$t('website.defaultServer')" size="normal" @close="handleClose">
+        <el-form @submit.prevent label-position="top" v-loading="loading">
+            <el-form-item :label="$t('website.defaultServer')">
+                <el-select v-model="defaultId">
+                    <el-option :value="0" :key="-1" :label="$t('website.noDefaultServer')"></el-option>
+                    <el-option
+                        v-for="(website, key) in websites"
+                        :key="key"
+                        :value="website.id"
+                        :label="website.primaryDomain"
+                    ></el-option>
+                </el-select>
+            </el-form-item>
+        </el-form>
+        <el-alert :closable="false">
+            <template #default>
+                <span class="whitespace-pre-line">{{ $t('website.defaultServerHelper') }}</span>
+            </template>
+        </el-alert>
         <template #footer>
             <span class="dialog-footer">
                 <el-button @click="handleClose" :disabled="loading">{{ $t('commons.button.cancel') }}</el-button>
@@ -34,12 +26,11 @@
                 </el-button>
             </span>
         </template>
-    </el-drawer>
+    </DrawerPro>
 </template>
 <script lang="ts" setup>
-import DrawerHeader from '@/components/drawer-header/index.vue';
-import { Website } from '@/api/interface/Website';
-import { ChangeDefaultServer, ListWebsites } from '@/api/modules/website';
+import { Website } from '@/api/interface/website';
+import { changeDefaultServer, listWebsites } from '@/api/modules/website';
 import i18n from '@/lang';
 import { ref } from 'vue';
 import { MsgSuccess } from '@/utils/message';
@@ -60,7 +51,7 @@ const handleClose = () => {
 };
 
 const get = async () => {
-    const res = await ListWebsites();
+    const res = await listWebsites();
     websites.value = res.data;
     websites.value.forEach((website: Website.WebsiteDTO) => {
         if (website.defaultServer) {
@@ -71,7 +62,7 @@ const get = async () => {
 
 const submit = () => {
     loading.value = true;
-    ChangeDefaultServer({ id: defaultId.value })
+    changeDefaultServer({ id: defaultId.value })
         .then(() => {
             MsgSuccess(i18n.global.t('commons.msg.updateSuccess'));
             handleClose();

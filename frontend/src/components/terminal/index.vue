@@ -1,35 +1,25 @@
 <template>
-    <div ref="terminalElement" @wheel="onTermWheel"></div>
+    <div ref="terminalElement"></div>
 </template>
 
 <script lang="ts" setup>
 import { ref, watch, onBeforeUnmount, nextTick } from 'vue';
-import { Terminal } from 'xterm';
-import 'xterm/css/xterm.css';
-import { FitAddon } from 'xterm-addon-fit';
+import { Terminal } from '@xterm/xterm';
+import '@xterm/xterm/css/xterm.css';
+import { FitAddon } from '@xterm/addon-fit';
 import { Base64 } from 'js-base64';
+import { GlobalStore, TerminalStore } from '@/store';
+const globalStore = GlobalStore();
 
 const terminalElement = ref<HTMLDivElement | null>(null);
 const fitAddon = new FitAddon();
 const termReady = ref(false);
 const webSocketReady = ref(false);
-const term = ref(
-    new Terminal({
-        lineHeight: 1.2,
-        fontSize: 12,
-        fontFamily: "Monaco, Menlo, Consolas, 'Courier New', monospace",
-        theme: {
-            background: '#000000',
-        },
-        cursorBlink: true,
-        cursorStyle: 'underline',
-        scrollback: 100,
-        tabStopWidth: 4,
-    }),
-);
+const term = ref();
 const terminalSocket = ref<WebSocket>();
-const heartbeatTimer = ref<number>();
+const heartbeatTimer = ref<NodeJS.Timer>();
 const latency = ref(0);
+const initCmd = ref('');
 
 const readyWatcher = watch(
     () => webSocketReady.value && termReady.value,
@@ -41,19 +31,75 @@ const readyWatcher = watch(
     },
 );
 
+const terminalStore = TerminalStore();
+const lineHeight = computed(() => terminalStore.lineHeight);
+const fontSize = computed(() => terminalStore.fontSize);
+const letterSpacing = computed(() => terminalStore.letterSpacing);
+watch([lineHeight, fontSize, letterSpacing], ([newLineHeight, newFontSize, newLetterSpacing]) => {
+    term.value.options.lineHeight = newLineHeight;
+    term.value.options.letterSpacing = newLetterSpacing;
+    term.value.options.fontSize = newFontSize;
+    changeTerminalSize();
+});
+const cursorStyle = computed(() => terminalStore.cursorStyle);
+watch(cursorStyle, (newCursorStyle) => {
+    term.value.options.cursorStyle = newCursorStyle;
+});
+const cursorBlink = computed(() => terminalStore.cursorBlink);
+watch(cursorBlink, (newCursorBlink) => {
+    term.value.options.cursorBlink = newCursorBlink === 'enable';
+});
+const scrollback = computed(() => terminalStore.scrollback);
+watch(scrollback, (newScrollback) => {
+    term.value.options.scrollback = newScrollback;
+});
+const scrollSensitivity = computed(() => terminalStore.scrollSensitivity);
+watch(scrollSensitivity, (newScrollSensitivity) => {
+    term.value.options.scrollSensitivity = newScrollSensitivity;
+});
+
 interface WsProps {
     endpoint: string;
     args: string;
     error: string;
+    initCmd: string;
 }
 const acceptParams = (props: WsProps) => {
     nextTick(() => {
         if (props.error.length !== 0) {
             initError(props.error);
         } else {
+            initCmd.value = props.initCmd || '';
             init(props.endpoint, props.args);
         }
     });
+};
+
+const newTerm = () => {
+    const background = getComputedStyle(document.documentElement).getPropertyValue('--panel-terminal-bg-color').trim();
+    term.value = new Terminal({
+        lineHeight: terminalStore.lineHeight || 1.2,
+        fontSize: terminalStore.fontSize || 12,
+        fontFamily: "Monaco, Menlo, Consolas, 'Courier New', monospace",
+        theme: {
+            background: background,
+        },
+        cursorBlink: terminalStore.cursorBlink ? terminalStore.cursorBlink === 'Enable' : true,
+        cursorStyle: terminalStore.cursorStyle ? getStyle() : 'underline',
+        scrollback: terminalStore.scrollback || 1000,
+        scrollSensitivity: terminalStore.scrollSensitivity || 15,
+    });
+};
+
+const getStyle = (): 'underline' | 'block' | 'bar' => {
+    switch (terminalStore.cursorStyle) {
+        case 'bar':
+            return 'bar';
+        case 'block':
+            return 'block';
+        default:
+            return 'underline';
+    }
 };
 
 const init = (endpoint: string, args: string) => {
@@ -78,11 +124,15 @@ function onClose(isKeepShow: boolean = false) {
             term.value.dispose();
         } catch {}
     }
+    if (terminalElement.value) {
+        terminalElement.value.innerHTML = '';
+    }
 }
 
 // terminal 相关代码 start
 
 const initTerminal = (online: boolean = false): boolean => {
+    newTerm();
     if (terminalElement.value) {
         term.value.open(terminalElement.value);
         term.value.loadAddon(fitAddon);
@@ -109,24 +159,6 @@ function changeTerminalSize() {
     }
 }
 
-/**
- * Support for Ctrl+MouseWheel to scaling fonts
- * @param event WheelEvent
- */
-const onTermWheel = (event: WheelEvent) => {
-    if (event.ctrlKey) {
-        event.preventDefault();
-        if (event.deltaY > 0) {
-            // web font-size mini 12px
-            if (term.value.options.fontSize > 12) {
-                term.value.options.fontSize = term.value.options.fontSize - 1;
-            }
-        } else {
-            term.value.options.fontSize = term.value.options.fontSize + 1;
-        }
-    }
-};
-
 // terminal 相关代码 end
 
 // websocket 相关代码 start
@@ -137,7 +169,7 @@ const initWebSocket = (endpoint_: string, args: string = '') => {
     const host = href.split('//')[1].split('/')[0];
     const endpoint = endpoint_.replace(/^\/+/, '');
     terminalSocket.value = new WebSocket(
-        `${protocol}://${host}/${endpoint}?cols=${term.value.cols}&rows=${term.value.rows}&${args}`,
+        `${protocol}://${host}/${endpoint}?cols=${term.value.cols}&rows=${term.value.rows}&${args}&operateNode=${globalStore.currentNode}`,
     );
     terminalSocket.value.onopen = runRealTerminal;
     terminalSocket.value.onmessage = onWSReceive;
@@ -157,6 +189,9 @@ const initWebSocket = (endpoint_: string, args: string = '') => {
 
 const runRealTerminal = () => {
     webSocketReady.value = true;
+    if (initCmd.value !== '') {
+        sendMsg(initCmd.value);
+    }
 };
 
 const onWSReceive = (message: MessageEvent) => {
@@ -164,7 +199,14 @@ const onWSReceive = (message: MessageEvent) => {
     switch (wsMsg.type) {
         case 'cmd': {
             term.value.element && term.value.focus();
-            wsMsg.data && term.value.write(Base64.decode(wsMsg.data)); // 这里理论上不用判断，但是Redis和Ctr还没实现Alive处理，所以exit后会一直发数据，todo
+            if (wsMsg.data) {
+                let receiveMsg = Base64.decode(wsMsg.data);
+                if (initCmd.value != '') {
+                    receiveMsg = receiveMsg?.replace(initCmd.value.trim(), '').trim();
+                    initCmd.value = '';
+                }
+                term.value.write(receiveMsg);
+            }
             break;
         }
         case 'heartbeat': {
@@ -182,9 +224,10 @@ const errorRealTerminal = (ex: any) => {
 
 const closeRealTerminal = (ev: CloseEvent) => {
     if (heartbeatTimer.value) {
-        clearInterval(heartbeatTimer.value);
+        clearInterval(Number(heartbeatTimer.value));
     }
-    term.value.write(ev.reason);
+    term.value?.write('The connection has been disconnected.');
+    term.value?.write(ev.reason);
 };
 
 const isWsOpen = () => {
@@ -205,6 +248,21 @@ function sendMsg(data: string) {
 
 // websocket 相关代码 end
 
+const resizeObserver = ref<ResizeObserver>();
+
+onMounted(() => {
+    // 使用 ResizeObserver 监听容器大小变化
+    resizeObserver.value = new ResizeObserver(() => {
+        if (termReady.value && webSocketReady.value) {
+            changeTerminalSize();
+        }
+    });
+
+    if (terminalElement.value) {
+        resizeObserver.value.observe(terminalElement.value);
+    }
+});
+
 defineExpose({
     acceptParams,
     onClose,
@@ -215,6 +273,7 @@ defineExpose({
 
 onBeforeUnmount(() => {
     onClose();
+    resizeObserver.value?.disconnect();
 });
 </script>
 
@@ -222,5 +281,13 @@ onBeforeUnmount(() => {
 #terminal {
     width: 100%;
     height: 100%;
+}
+:deep(.xterm) {
+    padding: 5px !important;
+    background-color: var(--panel-logs-bg-color) !important;
+}
+
+:deep(.xterm .xterm-viewport) {
+    background-color: var(--panel-logs-bg-color) !important;
 }
 </style>

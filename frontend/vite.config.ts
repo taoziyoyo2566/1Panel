@@ -1,5 +1,3 @@
-import { defineConfig, loadEnv, ConfigEnv, UserConfig } from 'vite';
-import vue from '@vitejs/plugin-vue';
 import { resolve } from 'path';
 import { wrapperEnv } from './src/utils/get-env';
 import { visualizer } from 'rollup-plugin-visualizer';
@@ -8,12 +6,23 @@ import VueSetupExtend from 'vite-plugin-vue-setup-extend';
 import eslintPlugin from 'vite-plugin-eslint';
 import vueJsx from '@vitejs/plugin-vue-jsx';
 import DefineOptions from 'unplugin-vue-define-options/vite';
+import { defineConfig, loadEnv, ConfigEnv, UserConfig } from 'vite';
+import vue from '@vitejs/plugin-vue';
+import pkg from './package.json';
+import dayjs from 'dayjs';
 
 import AutoImport from 'unplugin-auto-import/vite';
 import Components from 'unplugin-vue-components/vite';
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers';
+import svgLoader from 'vite-svg-loader';
 
 const prefix = `monaco-editor/esm/vs`;
+
+const { dependencies, devDependencies, name, version } = pkg;
+const __APP_INFO__ = {
+    pkg: { dependencies, devDependencies, name, version },
+    lastBuildTime: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+};
 
 export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
     const env = loadEnv(mode, process.cwd());
@@ -24,12 +33,18 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
             alias: {
                 '@': resolve(__dirname, './src'),
                 'vue-i18n': 'vue-i18n/dist/vue-i18n.cjs.js',
+                xpack: resolve(__dirname, './src/xpack'),
             },
+        },
+        define: {
+            __APP_INFO__: JSON.stringify(__APP_INFO__),
         },
         css: {
             preprocessorOptions: {
                 scss: {
                     additionalData: `@use "@/styles/var.scss" as *;`,
+                    silenceDeprecations: ['legacy-js-api'],
+                    api: 'modern',
                 },
             },
         },
@@ -38,7 +53,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
             open: viteEnv.VITE_OPEN,
             host: '0.0.0.0',
             proxy: {
-                '/api/v1': {
+                '/api/v2': {
                     target: 'http://localhost:9999/',
                     changeOrigin: true,
                     ws: true,
@@ -63,6 +78,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
                     ext: '.gz',
                 }),
             AutoImport({
+                imports: ['vue', 'vue-router'],
                 resolvers: [
                     ElementPlusResolver({
                         importStyle: 'sass',
@@ -76,13 +92,19 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
                     }),
                 ],
             }),
+            svgLoader({
+                defaultImport: 'url',
+            }),
         ],
         esbuild: {
-            pure: viteEnv.VITE_DROP_CONSOLE ? ['console.log', 'debugger'] : [],
+            pure: viteEnv.VITE_DROP_CONSOLE ? ['console.log'] : [],
+            drop: viteEnv.VITE_DROP_CONSOLE && process.env.NODE_ENV === 'production' ? ['debugger'] : [],
         },
         build: {
-            outDir: '../cmd/server/web',
+            outDir: '../core/cmd/server/web',
             minify: 'esbuild',
+            target: 'esnext',
+            cssCodeSplit: false,
             rollupOptions: {
                 output: {
                     chunkFileNames: 'assets/js/[name]-[hash].js',

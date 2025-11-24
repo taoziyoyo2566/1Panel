@@ -1,11 +1,5 @@
 <template>
-    <el-dialog
-        v-model="open"
-        :title="$t('app.checkTitle')"
-        width="50%"
-        :close-on-click-modal="false"
-        :destroy-on-close="true"
-    >
+    <DialogPro v-model="open" :title="$t('app.checkTitle')" size="large" @close="handleClose">
         <el-row>
             <el-alert type="warning" :description="$t('website.deleteHelper')" center show-icon :closable="false" />
             <el-col :span="24">
@@ -14,7 +8,7 @@
                     <el-table-column prop="name" :label="$t('app.installName')" />
                     <el-table-column prop="appName" :label="$t('app.appName')" />
                     <el-table-column prop="version" :label="$t('app.version')" />
-                    <el-table-column prop="status" :label="$t('app.status')" />
+                    <el-table-column prop="status" :label="$t('commons.table.status')" />
                 </el-table>
             </el-col>
         </el-row>
@@ -26,13 +20,12 @@
                 </el-button>
             </span>
         </template>
-    </el-dialog>
+    </DialogPro>
 </template>
 <script lang="ts" setup>
 import { Website } from '@/api/interface/website';
+import { routerToName } from '@/utils/router';
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-const router = useRouter();
 
 interface InstallRrops {
     items: Website.CheckRes[];
@@ -51,7 +44,7 @@ const handleClose = () => {
 };
 
 const toPage = () => {
-    router.push({ name: 'AppInstalled' });
+    routerToName('AppInstalled');
 };
 
 defineExpose({

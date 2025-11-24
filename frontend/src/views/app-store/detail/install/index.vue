@@ -1,120 +1,119 @@
 <template>
-    <el-drawer
-        :close-on-click-modal="false"
-        v-model="open"
-        :title="$t('app.install')"
-        size="50%"
-        :before-close="handleClose"
-    >
-        <template #header>
-            <Header :header="$t('app.install')" :back="handleClose" />
-        </template>
-
-        <el-row v-loading="loading">
-            <el-col :span="22" :offset="1">
-                <el-form
-                    @submit.prevent
-                    ref="paramForm"
-                    label-position="top"
-                    :model="form"
-                    label-width="150px"
-                    :rules="rules"
-                    :validate-on-rule-change="false"
-                >
-                    <el-form-item :label="$t('app.name')" prop="NAME">
-                        <el-input v-model.trim="form['NAME']"></el-input>
-                    </el-form-item>
-                    <Params
-                        v-if="open"
-                        v-model:form="form"
-                        v-model:params="installData.params"
-                        v-model:rules="rules"
-                    ></Params>
-                </el-form>
-            </el-col>
-        </el-row>
-
+    <DrawerPro v-model="open" :header="$t('commons.button.install')" @close="handleClose" size="large">
+        <AppInstallForm ref="installFormRef" v-model="formData" :loading="loading" />
         <template #footer>
             <span class="dialog-footer">
-                <el-button @click="handleClose" :disabled="loading">{{ $t('commons.button.cancel') }}</el-button>
-                <el-button type="primary" @click="submit(paramForm)" :disabled="loading">
+                <el-button @click="handleClose" :disabled="loading">
+                    {{ $t('commons.button.cancel') }}
+                </el-button>
+                <el-button type="primary" @click="handleSubmit" :disabled="loading">
                     {{ $t('commons.button.confirm') }}
                 </el-button>
             </span>
         </template>
-    </el-drawer>
+    </DrawerPro>
+    <TaskLog ref="taskLogRef" />
 </template>
 
-<script lang="ts" setup name="appInstall">
-import { App } from '@/api/interface/app';
-import { InstallApp } from '@/api/modules/app';
-import { Rules } from '@/global/form-rules';
-import { FormInstance, FormRules } from 'element-plus';
-import { reactive, ref } from 'vue';
+<script lang="ts" setup name="AppInstallPage">
 import { useRouter } from 'vue-router';
-import Params from '../params/index.vue';
-import Header from '@/components/drawer-header/index.vue';
+import AppInstallForm from '@/views/app-store/detail/form/index.vue';
+import { installApp } from '@/api/modules/app';
+import { MsgError } from '@/utils/message';
+import { newUUID } from '@/utils/util';
+import { routerToName } from '@/utils/router';
+import TaskLog from '@/components/log/task/index.vue';
+import i18n from '@/lang';
 
 const router = useRouter();
+const open = ref(false);
+const loading = ref(false);
+const installFormRef = ref<InstanceType<typeof AppInstallForm>>();
+const taskLogRef = ref();
 
-interface InstallRrops {
-    appDetailId: number;
-    params?: App.AppParams;
-}
-
-const installData = ref<InstallRrops>({
-    appDetailId: 0,
-});
-let open = ref(false);
-let form = ref<{ [key: string]: any }>({});
-let rules = ref<FormRules>({
-    NAME: [Rules.appName],
-});
-let loading = ref(false);
-const paramForm = ref<FormInstance>();
-const req = reactive({
+const formData = ref({
     appDetailId: 0,
     params: {},
     name: '',
+    advanced: true,
+    cpuQuota: 0,
+    memoryLimit: 0,
+    memoryUnit: 'M',
+    containerName: '',
+    allowPort: false,
+    editCompose: false,
+    dockerCompose: '',
+    version: '',
+    appID: '',
+    pullImage: true,
+    taskID: '',
+    gpuConfig: false,
+    specifyIP: '',
 });
 
 const handleClose = () => {
     open.value = false;
-    resetForm();
-};
-
-const resetForm = () => {
-    if (paramForm.value) {
-        paramForm.value.clearValidate();
-        paramForm.value.resetFields();
+    installFormRef.value?.resetForm();
+    if (router.currentRoute.value.query.install) {
+        routerToName('AppAll');
     }
 };
 
-const acceptParams = (props: InstallRrops): void => {
-    installData.value = props;
-    resetForm();
-    open.value = true;
+const handleSubmit = async () => {
+    const isValid = await installFormRef.value?.validate();
+    if (!isValid) return;
+
+    const submitData = installFormRef.value?.getFormData();
+
+    if (submitData.editCompose && submitData.dockerCompose === '') {
+        MsgError(i18n.global.t('app.composeNullErr'));
+        return;
+    }
+
+    if (submitData.cpuQuota < 0) {
+        submitData.cpuQuota = 0;
+    }
+    if (submitData.memoryLimit < 0) {
+        submitData.memoryLimit = 0;
+    }
+
+    const isHostMode = installFormRef.value?.isHostMode();
+    if (!isHostMode && !submitData.allowPort) {
+        ElMessageBox.confirm(i18n.global.t('app.installWarn'), i18n.global.t('app.checkTitle'), {
+            confirmButtonText: i18n.global.t('commons.button.confirm'),
+            cancelButtonText: i18n.global.t('commons.button.cancel'),
+        }).then(async () => {
+            await install(submitData);
+        });
+    } else {
+        await install(submitData);
+    }
 };
 
-const submit = async (formEl: FormInstance | undefined) => {
-    if (!formEl) return;
-    await formEl.validate((valid) => {
-        if (!valid) {
-            return;
-        }
-        req.appDetailId = installData.value.appDetailId;
-        req.params = form.value;
-        req.name = form.value['NAME'];
-        loading.value = true;
-        InstallApp(req)
-            .then(() => {
-                handleClose();
-                router.push({ path: '/apps/installed' });
-            })
-            .finally(() => {
-                loading.value = false;
-            });
-    });
+const install = async (submitData: any) => {
+    loading.value = true;
+    const taskID = newUUID();
+    submitData.taskID = taskID;
+
+    try {
+        await installApp(submitData);
+        handleClose();
+        openTaskLog(taskID);
+    } catch (error) {
+    } finally {
+        loading.value = false;
+    }
+};
+
+const openTaskLog = (taskID: string) => {
+    taskLogRef.value.openWithTaskID(taskID);
+};
+
+const acceptParams = async (props: { app: any; params?: any }) => {
+    open.value = true;
+    await nextTick();
+    installFormRef.value?.resetForm();
+    installFormRef.value?.initForm(props.app.key);
 };
 
 defineExpose({

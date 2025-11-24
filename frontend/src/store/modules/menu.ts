@@ -9,11 +9,13 @@ export const MenuStore = defineStore({
     state: (): MenuState => ({
         isCollapse: false,
         menuList: [],
+        withoutAnimation: false,
     }),
     getters: {},
     actions: {
         async setCollapse() {
             this.isCollapse = !this.isCollapse;
+            this.withoutAnimation = false;
         },
         async setMenuList(menuList: RouteRecordRaw[]) {
             const menus = menuList.filter((item) => {
@@ -21,6 +23,12 @@ export const MenuStore = defineStore({
             });
             this.menuList = menus;
         },
+        closeSidebar(withoutAnimation: boolean) {
+            this.isCollapse = true;
+            this.withoutAnimation = withoutAnimation;
+        },
     },
     persist: piniaPersistConfig('MenuStore'),
 });
+
+export default MenuStore;

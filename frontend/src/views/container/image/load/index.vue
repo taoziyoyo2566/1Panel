@@ -1,57 +1,56 @@
 <template>
-    <el-drawer v-model="loadVisiable" :destroy-on-close="true" :close-on-click-modal="false" size="30%">
-        <template #header>
-            <DrawerHeader :header="$t('container.importImage')" :back="handleClose" />
-        </template>
+    <DrawerPro v-model="loadVisible" :header="$t('container.importImage')" @close="handleClose" size="small">
         <el-form @submit.prevent v-loading="loading" ref="formRef" :model="form" label-position="top">
-            <el-row type="flex" justify="center">
-                <el-col :span="22">
-                    <el-form-item :label="$t('container.path')" :rules="Rules.requiredSelect" prop="path">
-                        <el-input v-model="form.path">
-                            <template #prepend>
-                                <FileList @choose="loadLoadDir" :dir="false"></FileList>
-                            </template>
-                        </el-input>
-                    </el-form-item>
-                </el-col>
-            </el-row>
+            <el-form-item :label="$t('container.path')" :rules="Rules.requiredInput" prop="path">
+                <el-input v-model="form.path">
+                    <template #prepend>
+                        <el-button icon="Folder" @click="fileRef.acceptParams({ dir: false })" />
+                    </template>
+                </el-input>
+            </el-form-item>
         </el-form>
         <template #footer>
             <span class="dialog-footer">
-                <el-button :disabeld="loading" @click="loadVisiable = false">
+                <el-button :disabled="loading" @click="loadVisible = false">
                     {{ $t('commons.button.cancel') }}
                 </el-button>
-                <el-button :disabeld="loading" type="primary" @click="onSubmit(formRef)">
-                    {{ $t('container.import') }}
+                <el-button :disabled="loading" type="primary" @click="onSubmit(formRef)">
+                    {{ $t('commons.button.import') }}
                 </el-button>
             </span>
         </template>
-    </el-drawer>
+    </DrawerPro>
+    <FileList ref="fileRef" @choose="loadLoadDir" />
+    <TaskLog ref="taskLogRef" width="70%" />
 </template>
 
 <script lang="ts" setup>
 import FileList from '@/components/file-list/index.vue';
 import { reactive, ref } from 'vue';
 import { Rules } from '@/global/form-rules';
+import TaskLog from '@/components/log/task/index.vue';
 import i18n from '@/lang';
 import { ElForm } from 'element-plus';
 import { imageLoad } from '@/api/modules/container';
 import { MsgSuccess } from '@/utils/message';
-import DrawerHeader from '@/components/drawer-header/index.vue';
+import { newUUID } from '@/utils/util';
 
 const loading = ref(false);
+const fileRef = ref();
+const taskLogRef = ref();
 
-const loadVisiable = ref(false);
+const loadVisible = ref(false);
 const form = reactive({
     path: '',
+    taskID: '',
 });
 
 const acceptParams = () => {
-    loadVisiable.value = true;
+    loadVisible.value = true;
     form.path = '';
 };
 const handleClose = () => {
-    loadVisiable.value = false;
+    loadVisible.value = false;
 };
 
 const emit = defineEmits<{ (e: 'search'): void }>();
@@ -64,10 +63,12 @@ const onSubmit = async (formEl: FormInstance | undefined) => {
     formEl.validate(async (valid) => {
         if (!valid) return;
         loading.value = true;
+        form.taskID = newUUID();
         await imageLoad(form)
             .then(() => {
                 loading.value = false;
-                loadVisiable.value = false;
+                loadVisible.value = false;
+                openTaskLog(form.taskID);
                 emit('search');
                 MsgSuccess(i18n.global.t('commons.msg.operationSuccess'));
             })
@@ -75,6 +76,10 @@ const onSubmit = async (formEl: FormInstance | undefined) => {
                 loading.value = false;
             });
     });
+};
+
+const openTaskLog = (taskID: string) => {
+    taskLogRef.value.openWithTaskID(taskID);
 };
 
 const loadLoadDir = async (path: string) => {

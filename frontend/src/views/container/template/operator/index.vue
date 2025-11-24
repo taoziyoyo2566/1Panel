@@ -1,8 +1,13 @@
 <template>
-    <el-drawer v-model="drawerVisiable" :destroy-on-close="true" :close-on-click-modal="false" size="50%">
-        <template #header>
-            <DrawerHeader :header="title + $t('container.composeTemplate')" :back="handleClose" />
-        </template>
+    <DrawerPro
+        v-model="drawerVisible"
+        :header="$t('container.composeTemplate')"
+        :resource="dialogData.title === 'create' ? '' : dialogData.rowData?.name"
+        @close="handleClose"
+        size="large"
+        :autoClose="false"
+        :fullScreen="true"
+    >
         <el-form
             v-loading="loading"
             label-position="top"
@@ -11,38 +16,24 @@
             :rules="rules"
             label-width="80px"
         >
-            <el-row type="flex" justify="center">
-                <el-col :span="22">
-                    <el-form-item :label="$t('container.name')" prop="name">
-                        <el-input
-                            :disabled="dialogData.title === 'edit'"
-                            v-model.trim="dialogData.rowData!.name"
-                        ></el-input>
-                    </el-form-item>
-                    <el-form-item :label="$t('container.description')">
-                        <el-input v-model="dialogData.rowData!.description"></el-input>
-                    </el-form-item>
-                    <el-form-item>
-                        <codemirror
-                            :autofocus="true"
-                            placeholder="#Define or paste the content of your docker-compose file here"
-                            :indent-with-tab="true"
-                            :tabSize="4"
-                            style="width: 100%; height: calc(100vh - 351px)"
-                            :lineWrapping="true"
-                            :matchBrackets="true"
-                            theme="cobalt"
-                            :styleActiveLine="true"
-                            :extensions="extensions"
-                            v-model="dialogData.rowData!.content"
-                        />
-                    </el-form-item>
-                </el-col>
-            </el-row>
+            <el-form-item :label="$t('commons.table.name')" prop="name">
+                <el-input :disabled="dialogData.title === 'edit'" v-model.trim="dialogData.rowData!.name"></el-input>
+            </el-form-item>
+            <el-form-item :label="$t('commons.table.description')">
+                <el-input v-model="dialogData.rowData!.description"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <CodemirrorPro
+                    placeholder="#Define or paste the content of your docker-compose file here"
+                    v-model="dialogData.rowData!.content"
+                    mode="yaml"
+                    :heightDiff="400"
+                ></CodemirrorPro>
+            </el-form-item>
         </el-form>
         <template #footer>
             <span class="dialog-footer">
-                <el-button :disabled="loading" @click="drawerVisiable = false">
+                <el-button :disabled="loading" @click="drawerVisible = false">
                     {{ $t('commons.button.cancel') }}
                 </el-button>
                 <el-button :disabled="loading" type="primary" @click="onSubmit(formRef)">
@@ -50,21 +41,18 @@
                 </el-button>
             </span>
         </template>
-    </el-drawer>
+    </DrawerPro>
 </template>
 
 <script lang="ts" setup>
 import { reactive, ref } from 'vue';
-import { Codemirror } from 'vue-codemirror';
-import { javascript } from '@codemirror/lang-javascript';
-import { oneDark } from '@codemirror/theme-one-dark';
 import { Rules } from '@/global/form-rules';
 import i18n from '@/lang';
 import { ElForm } from 'element-plus';
 import { Container } from '@/api/interface/container';
-import DrawerHeader from '@/components/drawer-header/index.vue';
 import { createComposeTemplate, updateComposeTemplate } from '@/api/modules/container';
 import { MsgSuccess } from '@/utils/message';
+import CodemirrorPro from '@/components/codemirror-pro/index.vue';
 
 const loading = ref(false);
 
@@ -73,21 +61,20 @@ interface DialogProps {
     rowData?: Container.TemplateInfo;
     getTableList?: () => Promise<any>;
 }
-const extensions = [javascript(), oneDark];
 const title = ref<string>('');
-const drawerVisiable = ref(false);
+const drawerVisible = ref(false);
 const dialogData = ref<DialogProps>({
     title: '',
 });
 const acceptParams = (params: DialogProps): void => {
     dialogData.value = params;
     title.value = i18n.global.t('commons.button.' + dialogData.value.title);
-    drawerVisiable.value = true;
+    drawerVisible.value = true;
 };
 const emit = defineEmits<{ (e: 'search'): void }>();
 
 const handleClose = () => {
-    drawerVisiable.value = false;
+    drawerVisible.value = false;
 };
 
 const rules = reactive({
@@ -109,7 +96,7 @@ const onSubmit = async (formEl: FormInstance | undefined) => {
                     loading.value = false;
                     MsgSuccess(i18n.global.t('commons.msg.operationSuccess'));
                     emit('search');
-                    drawerVisiable.value = false;
+                    drawerVisible.value = false;
                 })
                 .catch(() => {
                     loading.value = false;
@@ -121,7 +108,7 @@ const onSubmit = async (formEl: FormInstance | undefined) => {
                 loading.value = false;
                 MsgSuccess(i18n.global.t('commons.msg.operationSuccess'));
                 emit('search');
-                drawerVisiable.value = false;
+                drawerVisible.value = false;
             })
             .catch(() => {
                 loading.value = false;

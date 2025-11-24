@@ -5,11 +5,14 @@ export namespace File {
         name: string;
         user: string;
         group: string;
+        uid: number;
+        gid: number;
         content: string;
         size: number;
         isDir: boolean;
         isSymlink: boolean;
-        linkPath: boolean;
+        isHidden: boolean;
+        linkPath: string;
         type: string;
         updateTime: string;
         modTime: string;
@@ -19,6 +22,7 @@ export namespace File {
         items: File[];
         extension: string;
         itemTotal: number;
+        favoriteID: number;
     }
 
     export interface ReqFile extends ReqPage {
@@ -28,6 +32,13 @@ export namespace File {
         dir?: boolean;
         showHidden?: boolean;
         containSub?: boolean;
+        sortBy?: string;
+        sortOrder?: string;
+        isDetail?: boolean;
+    }
+
+    export interface ReqNodeFile extends ReqFile {
+        node: string;
     }
 
     export interface SearchUploadInfo extends ReqPage {
@@ -50,15 +61,18 @@ export namespace File {
     export interface FileCreate {
         path: string;
         isDir: boolean;
-        mode: number;
+        mode?: number;
         isLink?: boolean;
         isSymlink?: boolean;
         linkPath?: boolean;
+        sub?: boolean;
+        name?: string;
     }
 
     export interface FileDelete {
         path: string;
         isDir: boolean;
+        forceDelete: boolean;
     }
 
     export interface FileBatchDelete {
@@ -72,12 +86,14 @@ export namespace File {
         dst: string;
         name: string;
         replace: boolean;
+        secret: string;
     }
 
     export interface FileDeCompress {
         path: string;
         dst: string;
         type: string;
+        secret: string;
     }
 
     export interface FileEdit {
@@ -90,10 +106,18 @@ export namespace File {
         newName: string;
     }
 
+    export interface FileOwner {
+        path: string;
+        user: string;
+        group: string;
+        sub: boolean;
+    }
+
     export interface FileWget {
         path: string;
         name: string;
         url: string;
+        ignoreCertificate?: boolean;
     }
 
     export interface FileWgetRes {
@@ -116,6 +140,11 @@ export namespace File {
         url: string;
     }
 
+    export interface FileChunkDownload {
+        name: string;
+        path: string;
+    }
+
     export interface DirSizeReq {
         path: string;
     }
@@ -124,7 +153,96 @@ export namespace File {
         size: number;
     }
 
+    export interface DepthDirSizeRes {
+        size: number;
+        path: string;
+    }
+
     export interface FilePath {
         path: string;
+    }
+
+    export interface ExistFileInfo {
+        name: string;
+        path: string;
+        size: number;
+        uploadSize: number;
+        modTime: string;
+        isDir: boolean;
+    }
+
+    export interface RecycleBin {
+        sourcePath: string;
+        name: string;
+        isDir: boolean;
+        size: number;
+        deleteTime: string;
+        rName: string;
+        from: string;
+    }
+
+    export interface RecycleBinReduce {
+        rName: string;
+        from: string;
+        name: string;
+    }
+
+    export interface FileReadByLine {
+        id?: number;
+        type: string;
+        name?: string;
+        page: number;
+        pageSize: number;
+        taskID?: string;
+        taskType?: string;
+        taskOperate?: string;
+        resourceID?: number;
+    }
+
+    export interface Favorite extends CommonModel {
+        path: string;
+        isDir: boolean;
+        isTxt: boolean;
+        name: string;
+    }
+
+    export interface FileRole {
+        paths: string[];
+        mode: number;
+        user: string;
+        group: string;
+        sub: boolean;
+    }
+
+    export interface UserGroupResponse {
+        users: UserInfo[];
+        groups: string[];
+    }
+    export interface UserInfo {
+        username: string;
+        group: string;
+    }
+
+    export interface ConvertFile {
+        type: string;
+        path: string;
+        extension: string;
+        inputFile: string;
+        outputFormat: string;
+    }
+
+    export interface ConvertFileRequest {
+        files: ConvertFile[];
+        outputPath: string;
+        deleteSource: boolean;
+        taskID: string;
+    }
+
+    export interface ConvertLogResponse {
+        date: string;
+        type: string;
+        log: string;
+        status: string;
+        message: string;
     }
 }

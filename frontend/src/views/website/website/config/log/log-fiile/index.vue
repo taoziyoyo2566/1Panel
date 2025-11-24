@@ -4,47 +4,24 @@
             <el-form-item :label="$t('website.enable')">
                 <el-switch v-model="data.enable" @change="updateEnable"></el-switch>
             </el-form-item>
-            <div style="margin-top: 10px">
-                <el-checkbox border v-model="tailLog" style="float: left" @change="changeTail">
-                    {{ $t('commons.button.watch') }}
-                </el-checkbox>
-                <el-button
-                    style="margin-left: 20px"
-                    @click="onDownload"
-                    icon="Download"
-                    :disabled="data.content === ''"
-                >
-                    {{ $t('file.download') }}
-                </el-button>
-            </div>
         </div>
-        <br />
-        <codemirror
-            style="height: calc(100vh - 430px); width: 100%"
-            :autofocus="true"
-            :placeholder="$t('website.noLog')"
-            :indent-with-tab="true"
-            :tabSize="4"
-            :lineWrapping="true"
-            :matchBrackets="true"
-            theme="cobalt"
-            :styleActiveLine="true"
-            :extensions="extensions"
-            v-model="data.content"
-            :disabled="true"
-            @ready="handleReady"
-        />
+        <LogFile :config="{ id: id, type: 'website', name: logName, colorMode: 'nginx' }" ref="logRef">
+            <template #button>
+                <el-button @click="cleanLog" icon="Delete">
+                    {{ $t('commons.button.clean') }}
+                </el-button>
+            </template>
+        </LogFile>
     </div>
+    <OpDialog ref="opRef" @search="clearLog" />
 </template>
 <script lang="ts" setup>
-import { Codemirror } from 'vue-codemirror';
-import { javascript } from '@codemirror/lang-javascript';
-import { oneDark } from '@codemirror/theme-one-dark';
-import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef } from 'vue';
-import { OpWebsiteLog } from '@/api/modules/website';
-import { dateFormatForName } from '@/utils/util';
+import { computed, onMounted, ref } from 'vue';
+import { getWebsite, opWebsiteLog } from '@/api/modules/website';
+import i18n from '@/lang';
+import LogFile from '@/components/log/file/index.vue';
+import { MsgSuccess } from '@/utils/message';
 
-const extensions = [javascript(), oneDark];
 const props = defineProps({
     logType: {
         type: String,
@@ -55,96 +32,66 @@ const props = defineProps({
         default: 0,
     },
 });
-const logType = computed(() => {
+const logName = computed(() => {
     return props.logType;
 });
 const id = computed(() => {
     return props.id;
 });
-let loading = ref(false);
-let data = ref({
+const loading = ref(false);
+const data = ref({
     enable: false,
     content: '',
+    path: '',
 });
-let tailLog = ref(false);
-let timer: NodeJS.Timer | null = null;
-
-const view = shallowRef();
-const handleReady = (payload) => {
-    view.value = payload.view;
-};
-
-const getContent = () => {
-    const req = {
-        id: id.value,
-        operate: 'get',
-        logType: logType.value,
-    };
-    loading.value = true;
-    OpWebsiteLog(req)
-        .then((res) => {
-            data.value = res.data;
-            nextTick(() => {
-                const state = view.value.state;
-                view.value.dispatch({
-                    selection: { anchor: state.doc.length, head: state.doc.length },
-                    scrollIntoView: true,
-                });
-            });
-        })
-        .finally(() => {
-            loading.value = false;
-        });
-};
-
-const changeTail = () => {
-    if (tailLog.value) {
-        timer = setInterval(() => {
-            getContent();
-        }, 1000 * 5);
-    } else {
-        onCloseLog();
-    }
-};
+const opRef = ref();
+const logRef = ref();
 
 const updateEnable = () => {
     const operate = data.value.enable ? 'enable' : 'disable';
     const req = {
         id: id.value,
         operate: operate,
-        logType: logType.value,
+        logType: props.logType,
     };
     loading.value = true;
-    OpWebsiteLog(req)
+    opWebsiteLog(req)
         .then(() => {
-            getContent();
+            MsgSuccess(i18n.global.t('commons.msg.operationSuccess'));
         })
         .finally(() => {
             loading.value = false;
         });
 };
 
-const onDownload = async () => {
-    const downloadUrl = window.URL.createObjectURL(new Blob([data.value.content]));
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = downloadUrl;
-    a.download = logType.value + '-' + dateFormatForName(new Date()) + '.log';
-    const event = new MouseEvent('click');
-    a.dispatchEvent(event);
+const clearLog = () => {
+    logRef.value.clearLog();
 };
 
-const onCloseLog = async () => {
-    tailLog.value = false;
-    clearInterval(Number(timer));
-    timer = null;
+const cleanLog = async () => {
+    let log = props.logType === 'access.log' ? i18n.global.t('logs.websiteLog') : i18n.global.t('website.errLog');
+    opRef.value.acceptParams({
+        title: i18n.global.t('commons.button.clean'),
+        names: [],
+        msg: i18n.global.t('commons.msg.operatorHelper', [log, i18n.global.t('commons.button.clean')]),
+        api: opWebsiteLog,
+        params: { id: id.value, operate: 'delete', logType: props.logType },
+    });
+};
+
+const get = async () => {
+    try {
+        const res = await getWebsite(props.id);
+        if (props.logType === 'access.log') {
+            data.value.enable = res.data.accessLog;
+        }
+        if (props.logType === 'error.log') {
+            data.value.enable = res.data.errorLog;
+        }
+    } catch (error) {}
 };
 
 onMounted(() => {
-    getContent();
-});
-
-onUnmounted(() => {
-    onCloseLog();
+    get();
 });
 </script>

@@ -3,6 +3,7 @@ import { Layout } from '@/routers/constant';
 const appStoreRouter = {
     sort: 2,
     path: '/apps',
+    name: 'App-Menu',
     component: Layout,
     redirect: '/apps/all',
     meta: {
@@ -26,17 +27,8 @@ const appStoreRouter = {
                     meta: {
                         activeMenu: '/apps',
                         requiresAuth: false,
-                    },
-                },
-                {
-                    path: 'detail/:appKey',
-                    name: 'AppDetail',
-                    component: () => import('@/views/app-store/detail/index.vue'),
-                    props: true,
-                    hidden: true,
-                    meta: {
-                        activeMenu: '/apps',
-                        requiresAuth: false,
+                        parent: 'menu.app',
+                        title: 'app.all',
                     },
                 },
                 {
@@ -48,6 +40,8 @@ const appStoreRouter = {
                     meta: {
                         activeMenu: '/apps',
                         requiresAuth: false,
+                        parent: 'menu.app',
+                        title: 'app.installed',
                     },
                 },
                 {
@@ -59,6 +53,21 @@ const appStoreRouter = {
                     meta: {
                         activeMenu: '/apps',
                         requiresAuth: false,
+                        parent: 'menu.app',
+                        title: 'app.canUpgrade',
+                    },
+                },
+                {
+                    path: 'setting',
+                    name: 'AppStoreSetting',
+                    component: () => import('@/views/app-store/setting/index.vue'),
+                    props: true,
+                    hidden: true,
+                    meta: {
+                        activeMenu: '/apps',
+                        requiresAuth: false,
+                        parent: 'menu.app',
+                        title: 'commons.button.set',
                     },
                 },
             ],

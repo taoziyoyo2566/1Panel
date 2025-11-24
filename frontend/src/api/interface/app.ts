@@ -3,28 +3,63 @@ import { ReqPage, CommonModel } from '.';
 export namespace App {
     export interface App extends CommonModel {
         name: string;
-        icon: string;
+        icon?: string;
         key: string;
         tags: Tag[];
         shortDescZh: string;
         shortDescEn: string;
+        description: string;
         author: string;
         source: string;
         type: string;
+        status: string;
+        limit: number;
+        website?: string;
+        github?: string;
+        readme: string;
+    }
+
+    interface Locale {
+        zh: string;
+        en: string;
+        'zh-Hant': string;
+        ja: string;
+        ms: string;
+        'pt-br': string;
+        ru: string;
+        ko: string;
+        tr: string;
+        'es-es': string;
     }
 
     export interface AppDTO extends App {
         versions: string[];
+        installed: boolean;
+        architectures: string;
     }
 
     export interface Tag {
         key: string;
         name: string;
+        sort: number;
+    }
+
+    export interface AppItem {
+        name: string;
+        key: string;
+        id: number;
+        description: string;
+        status: string;
+        installed: boolean;
+        limit: number;
+        tags: string[];
+        gpuSupport: boolean;
+        recommend: number;
     }
 
     export interface AppResPage {
         total: number;
-        items: App.App[];
+        items: AppItem[];
     }
 
     export interface AppUpdateRes {
@@ -33,14 +68,17 @@ export namespace App {
     }
 
     export interface AppDetail extends CommonModel {
-        appId: string;
+        appId: number;
         icon: string;
         version: string;
         readme: string;
         params: AppParams;
         dockerCompose: string;
-        enbale: boolean;
         image: string;
+        hostMode?: boolean;
+        memoryRequired: number;
+        architectures: string;
+        gpuSupport: boolean;
     }
 
     export interface AppReq extends ReqPage {
@@ -48,6 +86,8 @@ export namespace App {
         tags?: string[];
         type?: string;
         recommend?: boolean;
+        resource?: string;
+        showCurrentArch?: boolean;
     }
 
     export interface AppParams {
@@ -66,6 +106,9 @@ export namespace App {
         child?: FromFieldChild;
         params?: FromParam[];
         multiple?: boolean;
+        allowCreate?: boolean;
+        label: Locale;
+        description: Locale;
     }
 
     export interface FromFieldChild extends FromField {
@@ -82,11 +125,13 @@ export namespace App {
     export interface ServiceParam {
         label: '';
         value: '';
+        from?: '';
     }
 
     export interface AppInstall {
         appDetailId: number;
         params: any;
+        taskID: string;
     }
 
     export interface AppInstallSearch extends ReqPage {
@@ -94,6 +139,7 @@ export namespace App {
         tags?: string[];
         update?: boolean;
         unused?: boolean;
+        sync?: boolean;
     }
     export interface ChangePort {
         key: string;
@@ -103,7 +149,7 @@ export namespace App {
 
     export interface AppInstalled extends CommonModel {
         name: string;
-        appId: string;
+        appID: number;
         appDetailId: string;
         env: string;
         status: string;
@@ -111,7 +157,57 @@ export namespace App {
         message: string;
         icon: string;
         canUpdate: boolean;
+        path: string;
+        httpPort?: number;
+        httpsPort?: number;
+        favorite: boolean;
         app: App;
+        webUI: string;
+        appKey?: string;
+        serviceName: string;
+    }
+
+    export interface AppInstalledInfo {
+        id: number;
+        name: string;
+        version: string;
+        status: string;
+        message: string;
+        httpPort: number;
+        container: string;
+        env: { [key: string]: string };
+        appKey: string;
+    }
+
+    export interface AppInstallDto {
+        id: number;
+        name: string;
+        appID: number;
+        appDetailID: number;
+        version: string;
+        status: string;
+        message: string;
+        httpPort: number;
+        httpsPort: number;
+        path: string;
+        canUpdate: boolean;
+        icon: string;
+        appName: string;
+        ready: number;
+        total: number;
+        appKey: string;
+        appType: string;
+        appStatus: string;
+        isEdit: boolean;
+        dockerCompose: string;
+        app: App.AppDetail;
+        linkDB: boolean;
+    }
+
+    export interface AppInstalledInfo {
+        id: number;
+        key: string;
+        name: string;
     }
 
     export interface CheckInstalled {
@@ -125,11 +221,19 @@ export namespace App {
         appInstallId: number;
         containerName: string;
         installPath: string;
+        httpPort: number;
+        httpsPort: number;
+        websiteDir: string;
     }
 
     export interface DatabaseConnInfo {
+        status: string;
+        username: string;
         password: string;
+        privilege: boolean;
+        containerName: string;
         serviceName: string;
+        systemIP: string;
         port: number;
     }
     export interface AppInstallResource {
@@ -144,17 +248,22 @@ export namespace App {
         detailId?: number;
         forceDelete?: boolean;
         deleteBackup?: boolean;
+        deleteImage?: boolean;
+        taskID?: string;
     }
 
-    export interface AppInstalledSearch {
+    export interface AppInstalledSearch extends ReqPage {
         type: string;
         unused?: boolean;
+        all?: boolean;
     }
 
     export interface AppService {
         label: string;
         value: string;
         config?: Object;
+        from?: string;
+        status: string;
     }
 
     export interface VersionDetail {
@@ -174,5 +283,69 @@ export namespace App {
         showValue?: string;
         required?: boolean;
         multiple?: boolean;
+        label: Locale;
+    }
+
+    export interface AppConfig {
+        params: InstallParams[];
+        rawCompose?: string;
+        cpuQuota: number;
+        memoryLimit: number;
+        memoryUnit: string;
+        containerName: string;
+        allowPort: boolean;
+        dockerCompose: string;
+        hostMode?: boolean;
+        type: string;
+        webUI: string;
+        specifyIP: string;
+        restartPolicy: string;
+    }
+
+    export interface IgnoredApp {
+        name: string;
+        detailID: number;
+        version: string;
+        scope: string;
+    }
+
+    export interface AppUpdateVersionReq {
+        appInstallID: number;
+        updateVersion?: string;
+    }
+
+    export interface AppIgnoreReq {
+        appID: number;
+        appDetailID: number;
+        scope: string;
+    }
+
+    export interface CancelAppIgnore {
+        id: number;
+    }
+
+    export interface AppStoreSync {
+        taskID: string;
+    }
+
+    export interface AppConfigUpdate {
+        installID: number;
+        webUI: string;
+    }
+
+    export interface AppStoreConfig {
+        uninstallDeleteImage: string;
+        uninstallDeleteBackup: string;
+        upgradeBackup: string;
+    }
+
+    export interface AppStoreConfigUpdate {
+        scope: string;
+        status: string;
+    }
+
+    export interface CustomAppStoreConfig {
+        status: string;
+        imagePrefix: string;
     }
 }

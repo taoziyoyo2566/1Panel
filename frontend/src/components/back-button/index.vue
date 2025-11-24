@@ -1,16 +1,16 @@
 <template>
     <el-page-header :content="header" @back="jump">
         <template v-if="slots.buttons" #content>
-            <span>{{ header }}</span>
-            <el-divider direction="vertical" />
             <slot name="buttons"></slot>
         </template>
     </el-page-header>
 </template>
 
 <script setup lang="ts">
+import { routerToName, routerToPath } from '@/utils/router';
 import { inject, useSlots } from 'vue';
 import { useRouter } from 'vue-router';
+
 const slots = useSlots();
 const router = useRouter();
 const props = defineProps({
@@ -26,10 +26,10 @@ function jump() {
         reloadPage();
     }
     if (path) {
-        router.push(path);
+        routerToPath(path);
     }
     if (name) {
-        router.push({ name: name });
+        routerToName(name);
     }
     if (to) {
         router.push(to);

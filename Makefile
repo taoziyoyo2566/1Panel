@@ -4,26 +4,46 @@ GOCLEAN=$(GOCMD) clean
 GOARCH=$(shell go env GOARCH)
 GOOS=$(shell go env GOOS )
 
-BASE_PAH := $(shell pwd)
-BUILD_PATH = $(BASE_PAH)/build
-WEB_PATH=$(BASE_PAH)/frontend
-SERVER_PATH=$(BASE_PAH)/backend
-MAIN= $(BASE_PAH)/cmd/server/main.go
-APP_NAME=1panel
+BASE_PATH := $(shell pwd)
+BUILD_PATH = $(BASE_PATH)/build
+WEB_PATH=$(BASE_PATH)/frontend
+ASSERT_PATH= $(BASE_PATH)/core/cmd/server/web/assets
+
+CORE_PATH=$(BASE_PATH)/core
+CORE_MAIN=$(CORE_PATH)/cmd/server/main.go
+CORE_NAME=1panel-core
+
+AGENT_PATH=$(BASE_PATH)/agent
+AGENT_MAIN=$(AGENT_PATH)/cmd/server/main.go
+AGENT_NAME=1panel-agent
+
+
+clean_assets:
+	rm -rf $(ASSERT_PATH)
+
+upx_bin:
+	upx $(BUILD_PATH)/$(CORE_NAME)
+	upx $(BUILD_PATH)/$(AGENT_NAME)
 
 build_frontend:
-	cd $(WEB_PATH) && npm install && npm run build:dev
+	cd $(WEB_PATH) && npm install && npm run build:pro
 
-build_backend_on_linux:
-	cd $(SERVER_PATH) \
-    && CGO_ENABLED=1 GOOS=$(GOOS) GOARCH=$(GOARCH) $(GOBUILD) -trimpath -ldflags '-s -w --extldflags "-static -fpic"' -tags 'osusergo,netgo' -o $(BUILD_PATH)/$(APP_NAME) $(MAIN)
+build_core_on_linux:
+	cd $(CORE_PATH) \
+	&& CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) $(GOBUILD) -trimpath -ldflags '-s -w' -o $(BUILD_PATH)/$(CORE_NAME) $(CORE_MAIN)
 
-build_backend_on_darwin:
-	cd $(SERVER_PATH) \
-    && CGO_ENABLED=1 GOOS=linux GOARCH=amd64 CC=x86_64-linux-musl-gcc CXX=x86_64-linux-musl-g++ $(GOBUILD) -trimpath -ldflags '-s -w --extldflags "-static -fpic"'  -o $(BUILD_PATH)/$(APP_NAME) $(MAIN)
+build_agent_on_linux:
+	cd $(AGENT_PATH) \
+    && CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) $(GOBUILD) -trimpath -ldflags '-s -w' -o $(BUILD_PATH)/$(AGENT_NAME) $(AGENT_MAIN)
 
-build_backend_on_archlinux:
-	cd $(SERVER_PATH) \
-    && CGO_ENABLED=1 GOOS=$(GOOS) GOARCH=$(GOARCH) $(GOBUILD) -trimpath -ldflags '-s -w --extldflags "-fpic"' -tags osusergo -o $(BUILD_PATH)/$(APP_NAME) $(MAIN)
+build_core_on_darwin:
+	cd $(CORE_PATH) \
+	&&  CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) -trimpath -ldflags '-s -w'  -o $(BUILD_PATH)/$(CORE_NAME) $(CORE_MAIN)
 
-build_all: build_frontend  build_backend_on_linux
+build_agent_on_darwin:
+	cd $(AGENT_PATH) \
+    &&  CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) -trimpath -ldflags '-s -w'  -o $(BUILD_PATH)/$(AGENT_NAME) $(AGENT_MAIN)
+
+build_all: build_frontend build_core_on_linux build_agent_on_linux
+
+build_on_local: clean_assets build_frontend build_core_on_darwin build_agent_on_darwin

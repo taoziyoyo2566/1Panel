@@ -8,13 +8,14 @@
 </template>
 
 <script lang="ts" setup>
-import LayoutContent from '@/layout/layout-content.vue';
-import RouterButton from '@/components/router-button/index.vue';
-
 const buttons = [
     {
         label: 'MySQL',
         path: '/databases/mysql',
+    },
+    {
+        label: 'PostgreSQL',
+        path: '/databases/postgresql',
     },
     {
         label: 'Redis',

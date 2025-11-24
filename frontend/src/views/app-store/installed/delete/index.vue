@@ -1,14 +1,14 @@
 <template>
-    <el-dialog
-        v-model="open"
-        :title="$t('commons.button.delete') + ' - ' + appInstallName"
-        width="40%"
-        :close-on-click-modal="false"
-        :before-close="handleClose"
-    >
-        <el-form ref="deleteForm" label-position="left" v-loading="loading">
+    <DialogPro v-model="open" :title="$t('commons.button.uninstall') + ' - ' + appInstallName" @close="handleClose">
+        <el-form
+            ref="deleteForm"
+            label-position="left"
+            v-loading="loading"
+            @submit.prevent="handleFormSubmit"
+            @keyup.enter="handleFormSubmit"
+        >
             <el-form-item>
-                <el-checkbox v-model="deleteReq.forceDelete" :label="$t('app.forceDelete')" />
+                <el-checkbox v-model="deleteReq.forceDelete" :label="$t('app.forceUninstall')" />
                 <span class="input-help">
                     {{ $t('app.forceDeleteHelper') }}
                 </span>
@@ -19,7 +19,13 @@
                     {{ $t('app.deleteBackupHelper') }}
                 </span>
             </el-form-item>
-            <el-form-item v-if="appType === 'website'">
+            <el-form-item>
+                <el-checkbox v-model="deleteReq.deleteImage" :label="$t('app.deleteImage')" />
+                <span class="input-help">
+                    {{ $t('app.deleteImageHelper') }}
+                </span>
+            </el-form-item>
+            <el-form-item v-if="appType === 'website' && linkDB">
                 <el-checkbox v-model="deleteReq.deleteDB" :label="$t('app.deleteDB')" />
                 <span class="input-help">
                     {{ $t('app.deleteDBHelper') }}
@@ -27,7 +33,7 @@
             </el-form-item>
             <el-form-item>
                 <span v-html="deleteHelper"></span>
-                <el-input v-model="deleteInfo" :placeholder="appInstallName" />
+                <el-input v-model="deleteInfo" :placeholder="appInstallName" @keyup.enter="handleFormSubmit" />
             </el-form-item>
         </el-form>
         <template #footer>
@@ -40,30 +46,37 @@
                 </el-button>
             </span>
         </template>
-    </el-dialog>
+    </DialogPro>
+    <TaskLog ref="taskLogRef" @close="handleClose" />
 </template>
 <script lang="ts" setup>
 import { FormInstance } from 'element-plus';
 import { onBeforeUnmount, ref } from 'vue';
 import { App } from '@/api/interface/app';
-import { InstalledOp } from '@/api/modules/app';
+import { installedOp } from '@/api/modules/app';
+import { getAppStoreConfig } from '@/api/modules/setting';
 import i18n from '@/lang';
-import { MsgSuccess } from '@/utils/message';
-import bus from '../../bus';
+import bus from '@/global/bus';
+import TaskLog from '@/components/log/task/index.vue';
+import { v4 as uuidv4 } from 'uuid';
 
-let deleteReq = ref({
+const deleteReq = ref({
     operate: 'delete',
     installId: 0,
     deleteBackup: false,
     forceDelete: false,
     deleteDB: true,
+    deleteImage: false,
+    taskID: '',
 });
-let open = ref(false);
-let loading = ref(false);
-let deleteHelper = ref('');
-let deleteInfo = ref('');
-let appInstallName = ref('');
-let appType = ref('');
+const open = ref(false);
+const loading = ref(false);
+const deleteHelper = ref('');
+const deleteInfo = ref('');
+const appInstallName = ref('');
+const appType = ref('');
+const taskLogRef = ref();
+const linkDB = ref(false);
 
 const deleteForm = ref<FormInstance>();
 const em = defineEmits(['close']);
@@ -73,33 +86,38 @@ const handleClose = () => {
     em('close', open);
 };
 
-const acceptParams = async (app: App.AppInstalled) => {
+const handleFormSubmit = () => {
+    if (!loading.value && deleteInfo.value === appInstallName.value) {
+        submit();
+    }
+};
+
+const acceptParams = async (app: App.AppInstallDto) => {
+    const config = await getAppStoreConfig();
     deleteReq.value = {
         operate: 'delete',
         installId: 0,
-        deleteBackup: false,
+        deleteBackup: config.data.uninstallDeleteBackup === 'Enable',
         forceDelete: false,
         deleteDB: true,
+        deleteImage: config.data.uninstallDeleteImage === 'Enable',
+        taskID: uuidv4(),
     };
     deleteInfo.value = '';
     deleteReq.value.installId = app.id;
-    appType.value = app.app.type;
+    appType.value = app.appType;
     deleteHelper.value = i18n.global.t('website.deleteConfirmHelper', [app.name]);
     appInstallName.value = app.name;
+    linkDB.value = app.linkDB;
     open.value = true;
 };
 
 const submit = async () => {
-    loading.value = true;
-    InstalledOp(deleteReq.value)
-        .then(() => {
-            handleClose();
-            MsgSuccess(i18n.global.t('commons.msg.deleteSuccess'));
-            bus.emit('update', true);
-        })
-        .finally(() => {
-            loading.value = false;
-        });
+    installedOp(deleteReq.value).then(() => {
+        handleClose();
+        taskLogRef.value.openWithTaskID(deleteReq.value.taskID);
+        bus.emit('update', true);
+    });
 };
 
 onBeforeUnmount(() => {
