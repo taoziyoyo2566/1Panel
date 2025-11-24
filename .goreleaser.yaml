@@ -33,9 +33,6 @@ builds:
       - ppc64le
       - s390x
       - riscv64
-    hooks:
-      post:
-        - ./ci/script.sh compress_binary {{ .Path }} {{ .Arch }}
 
   - id: core
     dir: core
@@ -59,9 +56,6 @@ builds:
       - ppc64le
       - s390x
       - riscv64
-    hooks:
-      post:
-        - ./ci/script.sh compress_binary {{ .Path }} {{ .Arch }}
 
 archives:
   - formats: [ 'tar.gz' ]
